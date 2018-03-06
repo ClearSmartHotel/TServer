@@ -25,9 +25,10 @@ def heartBeat(data):
 
     #更新设备列表:
     dList = data["device"]
-    keyList = ["id","ol","ep","pid","did","on","coolset","heartset","thermode","pt","wtype"]
+    keyList = ["id","ol","ep","pid","did","coolset","heartset","thermode","pt","wtype"]
     for device in dList:
         devInfo = {
+            "onoff" : device["on"],
             "gw" : macInfo["MAC"],
             "time_last" : time.time()
         }
