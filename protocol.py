@@ -45,5 +45,3 @@ def heartBeat(data):
         }
 
         db_replace("DEVICE", {"id": devInfo["id"] , "ep" :devInfo["ep"]}, devInfo)
-
-

@@ -29,7 +29,7 @@ class ShunzhouProxy():
     def handleJson(self, json_obj):
         print "handle json:"
         print json.dumps(json_obj)
-        self.transport.write(json.dumps(json_obj))
+        #self.transport.write(json.dumps(json_obj))
         dataPrase(json_obj)
 
 
