@@ -20,6 +20,6 @@ def db_replace(table,filter,data):
 
     ret = db.select(table, where=filter).first()
     if ret is None:
-        db.insert("GETWAY", **data)
+        db.insert(table, **data)
     else:
-        db.update("GETWAY", where=filter, **data)
+        db.update(table, where=filter, **data)

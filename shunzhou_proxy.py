@@ -113,6 +113,6 @@ class ShunzhouProxyFactory(Factory):
     def buildProtocol(self, addr):
         return ShunzhouProxyProtocol()
 
-endpoint = TCP4ServerEndpoint(reactor, 18821)
+endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())
 reactor.run()
