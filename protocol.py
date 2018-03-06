@@ -35,12 +35,12 @@ def heartBeat(data):
             "ep" : device.get("ep"),
             "pid" : device.get("pid",None),
             "did" : device.get("did",None),
-            "onoff": device.get("sw", {}).get("on", None),
-            "coolset" :  device.get("sw",{}).get("coolset",None),
-            "heartset": device.get("sw", {}).get("heartset", None),
-            "thermode": device.get("sw", {}).get("thermode", None),
-            "pt": device.get("sw", {}).get("pt", None),
-            "wtype": device.get("sw", {}).get("wtype", None),
+            "onoff": device.get("st", {}).get("on", None),
+            "coolset" :  device.get("st",{}).get("coolset",None),
+            "heartset": device.get("st", {}).get("heartset", None),
+            "thermode": device.get("st", {}).get("thermode", None),
+            "pt": device.get("st", {}).get("pt", None),
+            "wtype": device.get("st", {}).get("wtype", None),
             "time_last" : time.time()
         }
 
