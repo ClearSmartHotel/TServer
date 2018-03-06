@@ -17,11 +17,12 @@ def dataPrase(json_obj):
 def heartBeat(data):
     print "Get Heart Beat ."
     # 更新网关状态:
-    macInfo = {
-        "MAC": data["gw"]["mac"],
-        "LAST_TIMESTAMP": time.time()
-    }
-    db_replace("GETWAY",{"MAC": macInfo["MAC"]},macInfo)
+    if "gw" in data:
+        macInfo = {
+            "MAC": data["gw"]["mac"],
+            "LAST_TIMESTAMP": time.time()
+        }
+        db_replace("GETWAY",{"MAC": macInfo["MAC"]},macInfo)
 
     #更新设备列表:
     dList = data["device"]
@@ -29,9 +30,10 @@ def heartBeat(data):
     for device in dList:
         devInfo = {
             "onoff" : device["on"],
-            "gw" : macInfo["MAC"],
             "time_last" : time.time()
         }
+        if "gw" in data:
+            devInfo.update({"gw" : macInfo["MAC"]})
         for k in keyList:
             devInfo.update({k:device.get(k,None)})
 
