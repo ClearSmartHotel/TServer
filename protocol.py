@@ -32,7 +32,7 @@ def heartBeat(data):
             "time_last" : time.time()
         }
         for k in keyList:
-            devInfo.update(k,device.get(k,None))
+            devInfo.update({k:device.get(k,None)})
 
         db_replace("DEVICE", {"id": devInfo["id"] , "ep" :devInfo["ep"]}, devInfo)
 
