@@ -25,9 +25,15 @@ def heartBeat(data):
 
     #更新设备列表:
     dList = data["device"]
+    keyList = ["id","ol","ep","pid","did","on","coolset","heartset","thermode","pt","wtype"]
     for device in dList:
-        device["gw"]  = macInfo["MAC"]
-        device["time_last"] = time.time()
-        db_replace("DEVICE", {"id": device["id"] , "ep" :device["ep"]}, device)
+        devInfo = {
+            "gw" : macInfo["MAC"],
+            "time_last" : time.time()
+        }
+        for k in keyList:
+            devInfo.update(k,device.get(k,None))
+
+        db_replace("DEVICE", {"id": devInfo["id"] , "ep" :devInfo["ep"]}, devInfo)
 
 
