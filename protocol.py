@@ -29,13 +29,20 @@ def heartBeat(data):
     keyList = ["id","ol","ep","pid","did","coolset","heartset","thermode","pt","wtype"]
     for device in dList:
         devInfo = {
-            "onoff" : device.get("on",None),
+            "id" : device.get("id"),
+            "gw" : data.get("gw",{}).get("mac",""),
+            "ol" : device.get("ol"),
+            "ep" : device.get("ep"),
+            "pid" : device.get("pid",None),
+            "did" : device.get("did",None),
+            "onoff": device.get("sw", {}).get("on", None),
+            "coolset" :  device.get("sw",{}).get("coolset",None),
+            "heartset": device.get("sw", {}).get("heartset", None),
+            "thermode": device.get("sw", {}).get("thermode", None),
+            "pt": device.get("sw", {}).get("pt", None),
+            "wtype": device.get("sw", {}).get("wtype", None),
             "time_last" : time.time()
         }
-        if "gw" in data:
-            devInfo.update({"gw" : macInfo["MAC"]})
-        for k in keyList:
-            devInfo.update({k:device.get(k,None)})
 
         db_replace("DEVICE", {"id": devInfo["id"] , "ep" :devInfo["ep"]}, devInfo)
 
