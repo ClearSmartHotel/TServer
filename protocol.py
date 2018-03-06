@@ -15,7 +15,7 @@ def dataPrase(json_obj):
         pass
 
 def heartBeat(data):
-
+    print "Get Heart Beat ."
     # 更新网关状态:
     macInfo = {
         "MAC": data["gw"]["mac"],
@@ -30,7 +30,4 @@ def heartBeat(data):
         device["time_last"] = time.time()
         db_replace("DEVICE", {"id": device["id"] , "ep" :device["ep"]}, device)
 
-
-def ctrlDev(data):
-    pass
 

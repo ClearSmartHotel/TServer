@@ -5,6 +5,7 @@ import json
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet.endpoints import TCP4ServerEndpoint
 from twisted.internet import reactor
+from protocol import dataPrase
 
 #保存连接相关数据
 class ShunzhouProxy():
@@ -29,7 +30,7 @@ class ShunzhouProxy():
         print "handle json:"
         print json.dumps(json_obj)
         self.transport.write(json.dumps(json_obj))
-
+        dataPrase(json_obj)
 
 
 class ShunzhouProxyProtocol(Protocol):
@@ -112,6 +113,6 @@ class ShunzhouProxyFactory(Factory):
     def buildProtocol(self, addr):
         return ShunzhouProxyProtocol()
 
-endpoint = TCP4ServerEndpoint(reactor, 8007)
+endpoint = TCP4ServerEndpoint(reactor, 18821)
 endpoint.listen(ShunzhouProxyFactory())
 reactor.run()
