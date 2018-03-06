@@ -29,7 +29,7 @@ def heartBeat(data):
     keyList = ["id","ol","ep","pid","did","coolset","heartset","thermode","pt","wtype"]
     for device in dList:
         devInfo = {
-            "onoff" : device["on"],
+            "onoff" : device.get("on",None),
             "time_last" : time.time()
         }
         if "gw" in data:
