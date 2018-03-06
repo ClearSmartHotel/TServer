@@ -31,5 +31,6 @@ def heartBeat(data):
         db_replace("DEVICE", {"id": device["id"] , "ep" :device["ep"]}, device)
 
 
-
+def ctrlDev(data):
+    pass
 
