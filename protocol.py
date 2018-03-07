@@ -178,6 +178,19 @@ def testFunc():
     sendControlDev(id="010000124b00170f865a", ep=1, paraDict=paraDict)
     #time.sleep(1)
     sendControlDev(id="010000124b00170f8d7d", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b00170f8d7d", ep=2, paraDict=paraDict)
+    sendControlDev(id="010000124b00170f8d7d", ep=3, paraDict=paraDict)
+
+    sendControlDev(id="010000124b00170fc364", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b00170fc364", ep=2, paraDict=paraDict)
+    sendControlDev(id="010000124b00170fc364", ep=3, paraDict=paraDict)
+
+    sendControlDev(id="010000124b00170a05c2", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b00167d7a9d", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b00167d7a9d", ep=2, paraDict=paraDict)
+    sendControlDev(id="010000124b00167d7422", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b00167d6e53", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b00167d6e53", ep=2, paraDict=paraDict)
     if onOff:
         onOff = 0
     else:

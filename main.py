@@ -15,7 +15,7 @@ def timerTest(no, interval):
         testFunc()
     thread.exit_thread()
 
-thread.start_new_thread(timerTest,(1,3))
+thread.start_new_thread(timerTest,(1,5))
 
 endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())
