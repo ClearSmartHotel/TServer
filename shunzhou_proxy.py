@@ -10,9 +10,11 @@ from protocol import dataPrase
 #保存连接相关数据
 class ShunzhouProxy():
 
-    def __init__(self, transport):
+    def __init__(self, client, factory, transport):
         #用于发送消息
         self.transport = transport
+        self.client = client
+        self.factory = factory
 
         #缓存收到的数据
         self.recv_buf = ''
@@ -30,19 +32,32 @@ class ShunzhouProxy():
         print "handle json:"
         print json.dumps(json_obj)
         #self.transport.write(json.dumps(json_obj))
-        dataPrase(json_obj)
+        #更新客户端信息
+        self.factory.clients[self.client].update({"transport": self.transport})
+        #处理接收数据
+        gw_mac = dataPrase(self.factory.clients[self.client],json_obj)
+        #更新客户端信息
+        if gw_mac is not None:
+            self.factory.clients[self.client].update({"gw" : gw_mac})
+            print "get gw_mac message :" , self.factory.clients[self.client]
+
 
 
 class ShunzhouProxyProtocol(Protocol):
 
     MAX_DATA_RECV_COUNT_WITH_A_JSON = 10
 
+    def __init__(self, factory):
+        self.factory = factory
+
     def connectionMade(self):
         print "new connection come"
-        self.transport.shunzhou_proxy = ShunzhouProxy(self.transport)
+        self.transport.shunzhou_proxy = ShunzhouProxy(self ,self.factory, self.transport)
+        self.factory.addClient(self)
 
     def connectionLost(self, reason):
         print "connection lost: " + reason.getErrorMessage()
+        self.factory.deleteClient(self)
 
     def dataReceived(self, data):
         print "data recv: " + data + "\n"
@@ -106,11 +121,16 @@ class ShunzhouProxyProtocol(Protocol):
         return json_obj
 
 
-
-
 class ShunzhouProxyFactory(Factory):
+    clients = {}
     def buildProtocol(self, addr):
-        return ShunzhouProxyProtocol()
+        return ShunzhouProxyProtocol(self)
+    def addClient(self, newclient):
+        print(newclient)
+        self.clients[newclient] = { "gw" : None, "transport" : None}
+    def deleteClient(self, client):
+        print(client)
+        del self.clients[client]
 
 endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())

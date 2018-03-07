@@ -1,30 +1,41 @@
 
 # -*- coding: utf-8 -*-
 
-import json
+import json,time
 from common.DBBase import db,db_replace
-import time
 
-serial = 1  #发送消息的序列号
+serial = 0  #发送消息的序列号
 
 def sendMessage(gw_mac,msg):
     # TODO: 添加更加网关mac 发送到相关socket的功能
+    sendOut = 0
+    from shunzhou_proxy import ShunzhouProxyFactory
+
+    for c in ShunzhouProxyFactory.clients:
+        if c.get("gw") == gw_mac:
+            transport = c.get("transport")
+            transport.write(json.dumps(msg))
+            sendOut = 1
+            break
+    if sendOut == 0:
+        print "!! Send msg faild!, mac : ",gw_mac
+        print " faild msg : ",msg
+
+def sendRespose(clinet_msg , msg):
+    transport = clinet_msg.get("transport")
+    transport.write(json.dumps(msg))
     pass
 
-def sendRespose(msg):
-    # TODO: 添加直接发送response的功能
-    pass
-
-def dataPrase(json_obj):
+def dataPrase(clinet_msg ,json_obj):
     code = json_obj.get("code","")
     if code == 101:
-        revHeartBeat(json_obj)
-        return
+        gw_mac = revHeartBeat(clinet_msg,json_obj)
+        return gw_mac
     elif code == 104:
-        revStatusData(json_obj)
+        revStatusData(clinet_msg,json_obj)
         return
     elif code == 114:
-        revSceneStateResp(json_obj)
+        revSceneStateResp(clinet_msg,json_obj)
         return
 
 def revDevInfo(device,gw_mac = None):
@@ -47,7 +58,7 @@ def revDevInfo(device,gw_mac = None):
 
     db_replace("DEVICE", {"id": devInfo["id"], "ep": devInfo["ep"]}, devInfo)
 
-def revHeartBeat(data):
+def revHeartBeat(clinet_msg,data):
     print "Get Heart Beat ."
     # 更新网关状态:
     if "gw" in data:
@@ -69,8 +80,11 @@ def revHeartBeat(data):
         "result" : 0,
         "timestamp" : time.time()
     }
+    sendRespose(clinet_msg,resp)
+
     if "gw" in data:
-        sendMessage(data["gw"]["mac"],resp)
+        return data["gw"]["mac"]
+    return None
 
 
 def sendControlDev(id,ep,paraDict):
@@ -79,6 +93,8 @@ def sendControlDev(id,ep,paraDict):
         raise Exception("ID %s, ep %s not found" %(str(id),str(ep)) )
     gw_mac = devInfo["gw"]
 
+    global serial
+    serial += 1
     controlJson = {
         "code" : 1002,
         "id" : id,
@@ -88,14 +104,14 @@ def sendControlDev(id,ep,paraDict):
     }
     sendMessage(gw_mac,controlJson)
 
-def revStatusData(data):
+def revStatusData(clinet_msg , data):
     control = data.get("control")
     if control == 0:
         #上报网关信息
 
         #返回response
         resp = { "code": 1004, "control": 0,"result": 0 }
-        sendRespose(resp)
+        sendRespose(clinet_msg,resp)
         return
     elif control == 1:
         #上报设备删除退网
@@ -103,7 +119,7 @@ def revStatusData(data):
         #返回response
         resp = data
         resp.update({"code" : 1004 , "result" : 0})
-        sendRespose(resp)
+        sendRespose(clinet_msg , resp)
         return
     elif control == 2:
         #上报状态改变
@@ -120,9 +136,12 @@ def revStatusData(data):
             "control" : 2,
             "result": 0
         }
-        sendRespose(resp)
+        sendRespose(clinet_msg, resp)
 
 def sendEnableScene(gw_mac ,rid , state = 1):
+    global serial
+    serial += 1
+
     cmd = {
         "code" : 1014,
         "rid" :rid,
@@ -131,7 +150,7 @@ def sendEnableScene(gw_mac ,rid , state = 1):
     }
     sendMessage(gw_mac,cmd)
 
-def revSceneStateResp(data):
+def revSceneStateResp(clinet_msg , data):
     result = data.get("result")
     if result != 0:
         print "Scene state set faild : rid:%s state:%s " %(str(data["rid"]),str(data["state"]))
