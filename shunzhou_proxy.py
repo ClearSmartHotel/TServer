@@ -1,11 +1,25 @@
 # -*- coding: utf-8 -*-
 
-import json
+import json,thread,time
 
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet.endpoints import TCP4ServerEndpoint
 from twisted.internet import reactor
-from protocol import dataPrase
+from protocol import dataPrase,testFunc
+
+#测试用定时器线程，
+def timerTest(no, interval):
+    onOff = 1
+    print "timer thread start"
+    while True:
+        time.sleep(interval)
+        print "runing"
+        try:
+            testFunc()
+        except Exception, e:
+            print "Exception : ", Exception, ":", e
+            break
+    thread.exit_thread()
 
 #保存连接相关数据
 class ShunzhouProxy():
@@ -123,6 +137,7 @@ class ShunzhouProxyProtocol(Protocol):
 
 class ShunzhouProxyFactory(Factory):
     clients = {}
+
     def buildProtocol(self, addr):
         return ShunzhouProxyProtocol(self)
     def addClient(self, newclient):
@@ -131,6 +146,8 @@ class ShunzhouProxyFactory(Factory):
     def deleteClient(self, client):
         print(client)
         del self.clients[client]
+
+thread.start_new_thread(timerTest,(1,3))
 
 endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())

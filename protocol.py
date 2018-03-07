@@ -84,6 +84,7 @@ def revHeartBeat(clinet_msg,data):
         "timestamp" : time.time()
     }
     sendRespose(clinet_msg,resp)
+    testFunc()
 
     if "gw" in data:
         return data["gw"]["mac"]
@@ -165,3 +166,18 @@ def revSceneStateResp(clinet_msg , data):
         #TODO: ADD gw_mac filter
         db_replace("SCENE",{"rid" : data.get("rid")},sceneState)
         #TODO: sendto MQTT
+
+onOff  =1
+def testFunc():
+    global onOff
+    print time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    paraDict = {"on": onOff}
+    sendControlDev(id="010000124b00170f5e5f", ep=1, paraDict=paraDict)
+    #time.sleep(1)
+    sendControlDev(id="010000124b00170f865a", ep=1, paraDict=paraDict)
+    #time.sleep(1)
+    sendControlDev(id="010000124b00170f8d7d", ep=1, paraDict=paraDict)
+    if onOff:
+        onOff = 0
+    else:
+        onOff = 1
