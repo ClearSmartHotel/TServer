@@ -11,9 +11,9 @@ def sendMessage(gw_mac,msg):
     sendOut = 0
     from shunzhou_proxy import ShunzhouProxyFactory
 
-    for c in ShunzhouProxyFactory.clients:
-        if c.get("gw") == gw_mac:
-            transport = c.get("transport")
+    for client,info in ShunzhouProxyFactory.clients:
+        if info.get("gw") == gw_mac:
+            transport = info.get("transport")
             transport.write(json.dumps(msg))
             sendOut = 1
             break
