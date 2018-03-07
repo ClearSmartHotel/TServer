@@ -20,10 +20,13 @@ def sendMessage(gw_mac,msg):
     if sendOut == 0:
         print "!! Send msg faild!, mac : ",gw_mac
         print " faild msg : ",msg
+    else:
+        print "Send Msg ok : gw_mac %s" %gw_mac ,msg
 
 def sendRespose(clinet_msg , msg):
     transport = clinet_msg.get("transport")
     transport.write(json.dumps(msg))
+    print "Send response ok: " , msg
     pass
 
 def dataPrase(clinet_msg ,json_obj):
