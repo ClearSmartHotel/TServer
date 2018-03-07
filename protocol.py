@@ -12,6 +12,7 @@ def sendMessage(gw_mac,msg):
     from shunzhou_proxy import ShunzhouProxyFactory
 
     for info in ShunzhouProxyFactory.clients.values():
+        print "gw Info item : ",info
         if info.get("gw") == gw_mac:
             transport = info.get("transport")
             transport.write(json.dumps(msg))
