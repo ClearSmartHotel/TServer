@@ -87,7 +87,6 @@ class ShunzhouProxyProtocol(Protocol):
                         self.transport.shunzhou_proxy.recv_buf_len = len(self.transport.shunzhou_proxy.recv_buf)
                         self.transport.shunzhou_proxy.recv_buf_analyse_pos = 0
                         self.transport.shunzhou_proxy.data_recv_count_within_a_json = 0
-                        self.transport.shunzhou_proxy.data_recv_count_within_a_json = 0
                         #print "left: " + self.transport.shunzhou_proxy.recv_buf
                         break
                     except:
