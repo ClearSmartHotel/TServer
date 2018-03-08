@@ -191,6 +191,11 @@ def testFunc():
     sendControlDev(id="010000124b00167d7422", ep=1, paraDict=paraDict)
     sendControlDev(id="010000124b00167d6e53", ep=1, paraDict=paraDict)
     sendControlDev(id="010000124b00167d6e53", ep=2, paraDict=paraDict)
+
+    paraDict = {"cts": onOff}
+    sendControlDev(id="010000124b000e31d29f", ep=8, paraDict=paraDict)
+    sendControlDev(id="010000124b000e5369f6", ep=8, paraDict=paraDict)
+
     if onOff:
         onOff = 0
     else:
