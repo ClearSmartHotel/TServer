@@ -95,7 +95,7 @@ def revHeartBeat(clinet_msg,data):
     #更新设备列表:
     dList = data["device"]
     for device in dList:
-        gw_mac = data.get("gw", {}).get("mac", None)
+        gw_mac = data.get("gw", {"mac" : clinet_msg["gw"]}).get("mac", None)
         revDevInfo(device,gw_mac)
 
     #发送心跳应答
