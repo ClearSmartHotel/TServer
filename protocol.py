@@ -3,6 +3,8 @@
 
 import json,time
 from common.DBBase import db,db_replace
+import mqtt_client
+from common import config
 
 serial = 0  #发送消息的序列号
 
@@ -62,6 +64,24 @@ def revDevInfo(device,gw_mac = None):
 
     db_replace("DEVICE", {"id": devInfo["id"], "ep": devInfo["ep"]}, devInfo)
 
+def send_status_mqtt(id, ep):
+    # mqtt发送状态更新
+    gwInfo = db.query("select * from ROOM r,DEVICE d where r.gw=d.gw and d.id='%s' AND d.ep='%d'"
+                        % (id, ep))
+    if len(gwInfo) > 0:
+        dev = gwInfo[0]
+        statusJson = {
+            "wxCmd":"devStatus",
+            "devName": dev['devName'],
+            "onLine": dev['ol'],
+            "actionCode": dev['onoff']
+        }
+        mqtt_client.publish_message(config.project_name + dev['roomNo'], json.dumps(statusJson))
+
+
+
+
+
 def revHeartBeat(clinet_msg,data):
     print "Get Heart Beat ."
     # 更新网关状态:
@@ -85,7 +105,7 @@ def revHeartBeat(clinet_msg,data):
         "timestamp" : time.time()
     }
     sendRespose(clinet_msg,resp)
-    testFunc()
+    # testFunc()
 
     if "gw" in data:
         return data["gw"]["mac"]
@@ -129,7 +149,9 @@ def revStatusData(clinet_msg , data):
     elif control == 2:
         #上报状态改变
         revDevInfo(data)
-        # TODO: MQTT 通知设备状态改变
+        # MQTT 通知设备状态改变
+        send_status_mqtt(data.get("id"), data.get("ep"))
+
 
         #返回 response
         resp = {

@@ -7,6 +7,7 @@ import time
 import requests
 import websocket
 from common import config
+from common.DBBase import db
 import mqtt_client
 
 class haier_rcu_websocket(threading.Thread):
@@ -37,6 +38,7 @@ def on_open(ws):
     print "on open"
     #心跳注册监听整个项目所有设备状态变化
     def heartbeat_thread():
+        send_rcu_cmd(get_room_auth_cmd())
         cmdJson = '''
             {
                 "cmd":"registerGlobalObserver",
@@ -51,25 +53,91 @@ def on_open(ws):
     thread.start()
 
 def handle_message(msg):
+    print "handle haier rcu msg:", msg
     try:
         data = json.loads(msg)
+        cmd = data.get("cmd", None)
         roomNo = data.get("roomNo", None)
         statusJosn = data.get('info', None)
-        if not roomNo or not statusJosn:
+        token = data.get('authToken', None)
+        print "cmd:", cmd
+        if not cmd or not token:
             return 0
-        print "roomNo:", roomNo
-        print "status:", statusJosn
-        mqtt_client.publish_message(config.project_name + roomNo, json.dumps(statusJosn))
+        if cmd == "deviceStatusNotify":
+            dev_status_notify(data)
+
     except Exception as e:
         print e
+
+def dev_status_notify(data):
+    token = data.get('authToken', None)
+    statusJson = data.get('info', None)
+    roomInfo = db.query("select * from ROOM where authToken='%s'"%(token))
+    devId = statusJson['devId']
+    if len(roomInfo) < 1 or statusJson is None:
+        raise Exception("room token: %s or status: %s not found" % (token, statusJson))
+    room = roomInfo[0]
+
+    res = db.query("select * from haier_device where devId='%s'" % (devId))
+    devStatus = statusJson.get('devStatus', None)
+    onLine = 0 if statusJson['offLine'] else 1
+    if len(res) < 1:
+        # 设备不存在，插入
+        db.insert('haier_device',
+                  devId=statusJson['devId'],
+                  devName=statusJson['devName'],
+                  devType=statusJson['devType'],
+                  devSecretKey=statusJson['devSecretKey'],
+                  devActionCode=statusJson['devActionCode'],
+                  devStatus=json.dumps(devStatus),
+                  onLine=onLine,
+                  authToken=token)
+    else:
+        #更新rcu状态到数据库
+        db.update('haier_device', where="devId = $ID",
+                                  vars={'ID': devId},
+                                  authToken=token)
+
+    # mqtt发送状态更新
+    devInfo = db.query("select * from ROOM r,haier_device d where r.authToken=d.authToken and d.devId='%s'"
+                      % (statusJson['devId']))
+    if len(devInfo) > 0:
+        dev = devInfo[0]
+        mqttJson = {
+            "wxCmd": "devStatus",
+            "devName": dev['devName'],
+            "onLine": dev['onLine'],
+            "actionCode": dev['devActionCode']
+        }
+        if devStatus is not None:
+            mqttJson['devStatus'] = devStatus
+        mqtt_client.publish_message(config.project_name + room['roomNo'], json.dumps(mqttJson))
+
 
 def send_rcu_cmd(cmd):
     url = "https://" + config.haier_rcu_host + ":40443/puietelRcuApi"
     header = {'Content-Type': 'application/json'}
     r = requests.post(url, cmd, verify=False, headers=header)
     r.encoding = 'utf-8'
+    print r.status_code
+    if r.status_code != 200:
+        return 0
+    handle_message(r.text)
     print r.text
     #todo 向RCU发送控制指令，需要处理好数据格式
+    data = json.loads(r.text)
+    print data.get('cmd')
+
+def get_room_auth_cmd():
+    cmd = '''
+        {
+            "useHierarchy": 0,
+            "cmd": "fetchRoomAuthTokens",
+            "projectAuthKey": "%s"
+        }
+        '''%(config.haier_rcu_project_autoken)
+    return cmd
+
 
 if __name__ == "__main__":
     rcu_ws = haier_rcu_websocket()
