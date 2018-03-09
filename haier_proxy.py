@@ -78,12 +78,12 @@ def dev_status_notify(data):
         raise Exception("room token: %s or status: %s not found" % (token, statusJson))
     room = roomInfo[0]
 
-    res = db.query("select * from haier_device where devId='%s'" % (devId))
+    res = db.query("select * from HAIER_DEVICE where devId='%s'" % (devId))
     devStatus = statusJson.get('devStatus', None)
     onLine = 0 if statusJson['offLine'] else 1
     if len(res) < 1:
         # 设备不存在，插入
-        db.insert('haier_device',
+        db.insert('HAIER_DEVICE',
                   devId=statusJson['devId'],
                   devName=statusJson['devName'],
                   devType=statusJson['devType'],
@@ -94,12 +94,12 @@ def dev_status_notify(data):
                   authToken=token)
     else:
         #更新rcu状态到数据库
-        db.update('haier_device', where="devId = $ID",
+        db.update('HAIER_DEVICE', where="devId = $ID",
                                   vars={'ID': devId},
                                   authToken=token)
 
     # mqtt发送状态更新
-    devInfo = db.query("select * from ROOM r,haier_device d where r.authToken=d.authToken and d.devId='%s'"
+    devInfo = db.query("select * from ROOM r,HAIER_DEVICE d where r.authToken=d.authToken and d.devId='%s'"
                       % (statusJson['devId']))
     if len(devInfo) > 0:
         dev = devInfo[0]
@@ -138,6 +138,14 @@ def get_room_auth_cmd():
         '''%(config.haier_rcu_project_autoken)
     return cmd
 
+def get_room_services():
+    cmd = '''
+        {
+            "authToken": "%s",
+            "cmd": "fetchServices"
+        }
+        ''' % (config.haier_rcu_project_autoken)
+    return cmd
 
 if __name__ == "__main__":
     rcu_ws = haier_rcu_websocket()

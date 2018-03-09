@@ -77,7 +77,7 @@ def get_dev_list(dictData):
         print "房间不存在"
         return 0
     room = roomInfo[0]
-    rcuInfo = db.query("select * from haier_device where authToken='%s'" % (room['authToken']))
+    rcuInfo = db.query("select * from HAIER_DEVICE where authToken='%s'" % (room['authToken']))
     gwInfo = db.query("select * from DEVICE where gw='%s'" % (room['gw']))
     devListJson = {"wxCmd":"devList","devList":[]}
     for item in rcuInfo:
@@ -101,7 +101,7 @@ def send_cmd(dictData):
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (dictData['roomNo']))
     if devName is None or len(roomInfo) < 1:
         return 0
-    rcuInfo = db.query("select * from haier_device where devName='%s'"%(devName))
+    rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s'"%(devName))
     gwInfo = db.query("select * from DEVICE where devName='%s'" % (devName))
     devStatus = dictData.get('devStatus', None)
     if len(rcuInfo) < 1 and len(gwInfo) < 1:

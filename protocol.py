@@ -64,19 +64,26 @@ def revDevInfo(device,gw_mac = None):
 
     db_replace("DEVICE", {"id": devInfo["id"], "ep": devInfo["ep"]}, devInfo)
 
+#面板开关事件处理
 def send_status_mqtt(id, ep):
+
     # mqtt发送状态更新
     gwInfo = db.query("select * from ROOM r,DEVICE d where r.gw=d.gw and d.id='%s' AND d.ep='%d'"
                         % (id, ep))
-    if len(gwInfo) > 0:
-        dev = gwInfo[0]
-        statusJson = {
-            "wxCmd":"devStatus",
-            "devName": dev['devName'],
-            "onLine": dev['ol'],
-            "actionCode": dev['onoff']
-        }
-        mqtt_client.publish_message(config.project_name + dev['roomNo'], json.dumps(statusJson))
+    if len(gwInfo) < 0 :
+        return 0
+    dev = gwInfo[0]
+    if dev['controlType'] == 3:#控制RCUservices
+        pass
+
+
+    statusJson = {
+        "wxCmd":"devStatus",
+        "devName": dev['devName'],
+        "onLine": dev['ol'],
+        "actionCode": dev['onoff']
+    }
+    mqtt_client.publish_message(config.project_name + dev['roomNo'], json.dumps(statusJson))
 
 
 
