@@ -5,6 +5,7 @@ import json,time
 from common.DBBase import db,db_replace
 import mqtt_client
 from common import config
+import haier_proxy
 
 serial = 0  #发送消息的序列号
 
@@ -66,17 +67,13 @@ def revDevInfo(device,gw_mac = None):
 
 #面板开关事件处理
 def send_status_mqtt(id, ep):
-
     # mqtt发送状态更新
+    print "dev status changed"
     gwInfo = db.query("select * from ROOM r,DEVICE d where r.gw=d.gw and d.id='%s' AND d.ep='%d'"
-                        % (id, ep))
-    if len(gwInfo) < 0 :
+                      % (id, ep))
+    if len(gwInfo) < 1:
         return 0
     dev = gwInfo[0]
-    if dev['controlType'] == 3:#控制RCUservices
-        pass
-
-
     statusJson = {
         "wxCmd":"devStatus",
         "devName": dev['devName'],
@@ -85,9 +82,30 @@ def send_status_mqtt(id, ep):
     }
     mqtt_client.publish_message(config.project_name + dev['roomNo'], json.dumps(statusJson))
 
+    # 控制RCUservices
+    if dev['controlType'] in {104, 105, 106} and dev['onoff'] in {0, 1}:
+        haier_proxy.control_room_services(dev['authToken'], dev['controlType'], dev['onoff'])
+        #请稍后104，请勿扰105，两个服务互斥处理，控制另一个面板关闭
+        if dev['onoff'] == 1 and dev['controlType'] in {104, 105}:
+            mutexType = 209 - dev['controlType']
+            serviceDev = db.query("select * from DEVICE where gw='%s' and controlType='%d' and onoff='1'" % (dev['gw'], mutexType))
+            if len(serviceDev) > 0:
+                d = serviceDev[0]
+                sendControlDev(d['id'], d['ep'], {"on" : 0}, d['gw'])
 
-
-
+    #处理双控，判断设备controlType为201，主设备进行取反操作
+    elif dev['controlType'] == 201 and dev['onoff'] in {1}:
+        devInfo = db.query("select * from DEVICE where devName='%s' and controlType=1"%(dev['devName']))
+        if len(devInfo) > 0:
+            masterDev = devInfo[0]
+            actionCode = 1
+            if masterDev['onoff'] in {0, 1}:
+                actionCode = 1 - masterDev['onoff']
+            paraDict = {"on": actionCode}
+            sendControlDev(id=masterDev['id'], ep=masterDev['ep'], paraDict=paraDict, gw_mac=masterDev['gw'])
+        # 自己立即关闭不保存开关状态
+        paraDict = {"on": 0}
+        sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=dev['gw'])
 
 def revHeartBeat(clinet_msg,data):
     print "Get Heart Beat ."
@@ -119,11 +137,12 @@ def revHeartBeat(clinet_msg,data):
     return None
 
 
-def sendControlDev(id,ep,paraDict):
-    devInfo = db.select("DEVICE" , where = {"id" : id, "ep" : ep}).first()
-    if devInfo is None:
-        raise Exception("ID %s, ep %s not found" %(str(id),str(ep)) )
-    gw_mac = devInfo["gw"]
+def sendControlDev(id,ep,paraDict,gw_mac=None):
+    if gw_mac is None:
+        devInfo = db.select("DEVICE" , where = {"id" : id, "ep" : ep}).first()
+        if devInfo is None:
+            raise Exception("ID %s, ep %s not found" %(str(id),str(ep)) )
+        gw_mac = devInfo["gw"]
 
     global serial
     serial += 1
@@ -156,9 +175,6 @@ def revStatusData(clinet_msg , data):
     elif control == 2:
         #上报状态改变
         revDevInfo(data)
-        # MQTT 通知设备状态改变
-        send_status_mqtt(data.get("id"), data.get("ep"))
-
 
         #返回 response
         resp = {
@@ -171,6 +187,10 @@ def revStatusData(clinet_msg , data):
             "result": 0
         }
         sendRespose(clinet_msg, resp)
+
+        # MQTT 通知设备状态改变
+        send_status_mqtt(data.get("id"), data.get("ep"))
+
 
 def sendEnableScene(gw_mac ,rid , state = 1):
     global serial

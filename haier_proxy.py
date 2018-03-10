@@ -7,7 +7,7 @@ import time
 import requests
 import websocket
 from common import config
-from common.DBBase import db
+from common.DBBase import db,db_replace
 import mqtt_client
 
 class haier_rcu_websocket(threading.Thread):
@@ -65,10 +65,16 @@ def handle_message(msg):
             return 0
         if cmd == "deviceStatusNotify":
             dev_status_notify(data)
-
+        elif cmd == "fetchServices":
+            updateService(data)
+        elif cmd == "fetchDevices":
+            update_room_devices(data)
+        elif cmd == "serviceStatusNotify":
+            pass
     except Exception as e:
         print e
 
+#rcu设备状态更新
 def dev_status_notify(data):
     token = data.get('authToken', None)
     statusJson = data.get('info', None)
@@ -93,11 +99,12 @@ def dev_status_notify(data):
                   onLine=onLine,
                   authToken=token)
     else:
-        #更新rcu状态到数据库
+        #更新rcu设备状态到数据库
         db.update('HAIER_DEVICE', where="devId = $ID",
                                   vars={'ID': devId},
-                                  authToken=token)
-
+                                  onLine=onLine,
+                                  devStatus=json.dumps(devStatus),
+                                  devActionCode=statusJson['devActionCode'])
     # mqtt发送状态更新
     devInfo = db.query("select * from ROOM r,HAIER_DEVICE d where r.authToken=d.authToken and d.devId='%s'"
                       % (statusJson['devId']))
@@ -113,20 +120,22 @@ def dev_status_notify(data):
             mqttJson['devStatus'] = devStatus
         mqtt_client.publish_message(config.project_name + room['roomNo'], json.dumps(mqttJson))
 
+    #插卡取电
+    if statusJson['devType'] == 2 and devStatus is not None:
+        if devStatus['cardStatus'] == 1:
+            get_room_devices(token)
+
+
 
 def send_rcu_cmd(cmd):
     url = "https://" + config.haier_rcu_host + ":40443/puietelRcuApi"
     header = {'Content-Type': 'application/json'}
-    r = requests.post(url, cmd, verify=False, headers=header)
+    r = requests.post(url, cmd, verify=False, headers=header, timeout=2)
     r.encoding = 'utf-8'
     print r.status_code
     if r.status_code != 200:
         return 0
     handle_message(r.text)
-    print r.text
-    #todo 向RCU发送控制指令，需要处理好数据格式
-    data = json.loads(r.text)
-    print data.get('cmd')
 
 def get_room_auth_cmd():
     cmd = '''
@@ -138,14 +147,79 @@ def get_room_auth_cmd():
         '''%(config.haier_rcu_project_autoken)
     return cmd
 
-def get_room_services():
+def get_room_services(authToken):
     cmd = '''
         {
             "authToken": "%s",
             "cmd": "fetchServices"
         }
-        ''' % (config.haier_rcu_project_autoken)
-    return cmd
+        ''' % (authToken)
+    send_rcu_cmd(cmd)
+
+def get_room_devices(authToken):
+    cmd = {
+                "cmd": "fetchDevices",
+                "authToken": authToken,
+                "type": "req"
+            }
+
+    send_rcu_cmd(json.dumps(cmd))
+
+def update_room_devices(data):
+    authToken = data.get('authToken', None)
+    devInfo = data.get('devInfos', None)
+    if authToken is None or len(devInfo) < 1:
+        print "no devices found"
+        return 0
+    for d in devInfo:
+        d['onLine'] = 1 - d['offLine']
+        d['authToken'] = authToken
+        d.pop('offLine')
+        if d.get('devStatus', None) is not None:
+            d['devStatus'] = json.dumps(d.get('devStatus'))
+        ret = db.select('HAIER_DEVICE', where={'devId':d['devId']}).first()
+        if ret is None:
+            db.insert('HAIER_DEVICE', **d)
+        else:
+            d.pop('devName')
+            db.update('HAIER_DEVICE', where={'devId':d['devId']}, **d)
+
+
+def updateService(data):
+    services = data.get('services', None)
+    authToken = data.get('authToken', None)
+    if services is not None and authToken is not None:
+        for s in services:
+            s['authToken'] = authToken
+            db_replace("SERVICE", {"serviceType": s["serviceType"],
+                                   "serviceStatus": s["serviceStatus"],
+                                   "serviceToken": s["serviceToken"],
+                                   "serviceNameChs": s["serviceNameChs"],
+                                   "authToken": s['authToken']}, s)
+
+
+def control_room_services(authToken, type, enable):
+    serviceInfo = db.query("select * from SERVICE where authToken='%s' and serviceType='%d'"%(authToken, type))
+    if len(serviceInfo) < 1:
+        get_room_services(authToken)
+        global serviceInfo
+        serviceInfo = db.query("select * from SERVICE where authToken='%s' and serviceType='%d'" % (authToken, type))
+        if len(serviceInfo) < 1:
+            print "cant find service info"
+            return 0
+
+    service = serviceInfo[0]
+
+    cmd = {
+                "serviceType": type,
+                "authToken": authToken,
+                "cmd": "requestServiceControl",
+                "ignoreCardStatus": 0,
+                "serviceToken": service['serviceToken'],
+                "enableService": enable,
+            }
+
+    send_rcu_cmd(json.dumps(cmd))
 
 if __name__ == "__main__":
     rcu_ws = haier_rcu_websocket()

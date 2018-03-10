@@ -92,7 +92,7 @@ POST 所有指令通过mqtt订阅项目名+房间号返回
 "wxAuthToken": "kuidara56bm963fapw2t20180130093902",
 "wxCmd":"devControl",
 "devName":"空调",//设备id
-"actionCode":0,//开:1，关:2
+"actionCode":0,//开:1，关:0
 "devStatus":{//除了空调，其它设备不用传
         "mode": 2,//1制冷，2制热，3保持，4通风
         "setTemp": 25,//15-32

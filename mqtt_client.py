@@ -78,7 +78,7 @@ def get_dev_list(dictData):
         return 0
     room = roomInfo[0]
     rcuInfo = db.query("select * from HAIER_DEVICE where authToken='%s'" % (room['authToken']))
-    gwInfo = db.query("select * from DEVICE where gw='%s'" % (room['gw']))
+    gwInfo = db.query("select * from DEVICE where gw='%s' and controlType=1" % (room['gw']))
     devListJson = {"wxCmd":"devList","devList":[]}
     for item in rcuInfo:
         devJson = {'devName': item['devName'],
@@ -130,9 +130,14 @@ def send_cmd(dictData):
     elif len(gwInfo) > 0:#gw设备控制
         print "gw control"
         dev = gwInfo[0]
-        paraDict = {"on": dictData.get('actionCode')}
-        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict)
-        #todo 增加一个设备参数接口,减少重复查询数据库
+        actionCode = dictData.get('actionCode')
+        #如果actionCode是2，取反操作
+        if actionCode == 2 and dev['onoff'] in {0, 1}:
+            actionCode = 1 - dev['onoff']
+        elif actionCode == 2:
+            actionCode = 1
+        paraDict = {"on": actionCode}
+        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=dev['gw'])
 
 
 if __name__ == "__main__":
