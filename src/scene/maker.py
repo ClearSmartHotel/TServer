@@ -100,10 +100,15 @@ class StrategyMaker:
         return
 
 class GroupMaker:
-    def __init__(self,gw_mac,room_type):
-        self.room_type = room_type
-        self.gw_mac = gw_mac
+    def __init__(self,roomNo):
+        rInfo = db.select("ROOM", where={"roomNo" : roomNo}).first()
+        if rInfo is None:
+            print "roomNo is not exist: %s" % str(roomNo)
+            raise Exception("roomNo is not exist: %s" % str(roomNo))
+        self.room_type = rInfo["room_type"]
+        self.gw_mac = rInfo["gw"]
         pass
+
     def getInfo(self,name):
         gInfo = db.select("GROUP_INFO", where={"group_name": name}).first()
         if gInfo is None:
