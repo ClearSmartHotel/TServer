@@ -49,7 +49,7 @@ class StrategyMaker:
         sDevList = list(sDevList)
         print json.dumps(sDevList)
 
-        self.rid = sInfo.get("rid"),
+        self.rid = sInfo.get("rid")
         #生成策略Josn
         sJson = {
             "code":1013,
@@ -82,7 +82,7 @@ class StrategyMaker:
                 obj = {
                     "idx": actIdx,
                     "delay" : dev.get("delay",0),
-                    "type" : 2,  # TODO: 确认para18参数的值
+                    "type" : 1,
                     "id" : dev["id"],
                     "ep" : dev["ep"]
                 }
@@ -90,6 +90,7 @@ class StrategyMaker:
                 obj.update(act)
                 sJson["act"].append(obj)
                 actIdx += 1
+        print "scene json"
         print json.dumps(sJson)
         self.sJson = sJson
         return  sJson
