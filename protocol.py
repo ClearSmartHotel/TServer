@@ -222,30 +222,218 @@ def testFunc():
     global onOff
     print time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     paraDict = {"on": onOff}
-    sendControlDev(id="010000124b00170f5e5f", ep=1, paraDict=paraDict)
-    #time.sleep(1)
-    sendControlDev(id="010000124b00170f865a", ep=1, paraDict=paraDict)
-    #time.sleep(1)
-    sendControlDev(id="010000124b00170f8d7d", ep=1, paraDict=paraDict)
-    sendControlDev(id="010000124b00170f8d7d", ep=2, paraDict=paraDict)
-    sendControlDev(id="010000124b00170f8d7d", ep=3, paraDict=paraDict)
-
-    sendControlDev(id="010000124b00170fc364", ep=1, paraDict=paraDict)
-    sendControlDev(id="010000124b00170fc364", ep=2, paraDict=paraDict)
-    sendControlDev(id="010000124b00170fc364", ep=3, paraDict=paraDict)
-
-    sendControlDev(id="010000124b00170a05c2", ep=1, paraDict=paraDict)
-    sendControlDev(id="010000124b00167d7a9d", ep=1, paraDict=paraDict)
-    sendControlDev(id="010000124b00167d7a9d", ep=2, paraDict=paraDict)
-    sendControlDev(id="010000124b00167d7422", ep=1, paraDict=paraDict)
-    sendControlDev(id="010000124b00167d6e53", ep=1, paraDict=paraDict)
-    sendControlDev(id="010000124b00167d6e53", ep=2, paraDict=paraDict)
+    # sendControlDev(id="010000124b00170f5e5f", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00170f865a", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00170f8d7d", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00170f8d7d", ep=2, paraDict=paraDict)
+    # sendControlDev(id="010000124b00170f8d7d", ep=3, paraDict=paraDict)
+    #
+    # sendControlDev(id="010000124b00170fc364", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00170fc364", ep=2, paraDict=paraDict)
+    # sendControlDev(id="010000124b00170fc364", ep=3, paraDict=paraDict)
+    #
+    # sendControlDev(id="010000124b00170a05c2", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00167d7a9d", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00167d7a9d", ep=2, paraDict=paraDict)
+    # sendControlDev(id="010000124b00167d7422", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00167d6e53", ep=1, paraDict=paraDict)
+    # sendControlDev(id="010000124b00167d6e53", ep=2, paraDict=paraDict)
+    sendControlDev(id="010000124b000e4fbe26", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0bd9f8", ep=2, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0bd9f8", ep=3, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0bd9f8", ep=4, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0bd9f8", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0c03ae", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0c03ae", ep=2, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0c03de", ep=1, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0c03de", ep=2, paraDict=paraDict)
+    sendControlDev(id="010000124b000e0c03de", ep=3, paraDict=paraDict)
 
     paraDict = {"cts": onOff}
-    sendControlDev(id="010000124b000e31d29f", ep=8, paraDict=paraDict)
-    sendControlDev(id="010000124b000e5369f6", ep=8, paraDict=paraDict)
+    # sendControlDev(id="010000124b000e31d29f", ep=8, paraDict=paraDict)
+    # sendControlDev(id="010000124b000e5369f6", ep=8, paraDict=paraDict)
 
     if onOff:
         onOff = 0
     else:
         onOff = 1
+
+def send_scene_json():
+    print "send scene json"
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json1))
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json2))
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json3))
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json4))
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json5))
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json6))
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json7))
+    # sendMessage("2c:6a:6f:00:52:6f", json.loads(json8))
+
+
+json1 = '''
+{
+  "code": 1013,
+  "serial": 1520667056959,
+  "name": "shuangkong",
+  "rid": 231111,
+  "state": 1, 
+  "trig": 0,
+  "ct": "2018-03-10T15:30:57",
+  "exp": "function main(a1,b1) if (a1==b1) then return true else return false end end",
+  "cond": [
+    {
+      "idx": 1,
+      "type": 2,
+      "id": "010000124b00170f865a",
+      "ep": 1,
+      "op": 1,
+      "cmd": "on",
+      "val": "true"
+    }
+  ],
+  "act": [
+    {
+      "idx": 1,
+      "delay": 1,
+      "type": 1,
+      "id": "010000124b00170a05c2",
+      "ep": 1,
+      "cmd": "on",
+      "val": true
+    }
+  ]
+}
+'''
+
+json2 = '''
+{
+  "code": 1013,
+  "serial": 1520667056959,
+  "name": "shuangkong",
+  "rid": 231112,
+  "state": 1,
+  "trig": 0,
+  "ct": "2018-03-10T15:30:57",
+  "exp": "function main(a1,b1) if (a1==b1) then return true else return false end end",
+  "cond": [
+    {
+      "idx": 1,
+      "type": 2,
+      "id": "010000124b00170f865a",
+      "ep": 1,
+      "op": 1,
+      "cmd": "on",
+      "val": "false"
+    }
+  ],
+  "act": [
+    {
+      "idx": 1,
+      "delay": 1,
+      "type": 1,
+      "id": "010000124b00170a05c2",
+      "ep": 1,
+      "cmd": "on",
+      "val": false
+    }
+  ]
+}
+'''
+
+json3 = '''
+{
+  "code": 1013,
+  "serial": 1520667056959,
+  "name": "shuangkong",
+  "rid": 231113,
+  "state": 1,
+  "trig": 0,
+  "ct": "2018-03-10T15:30:57",
+  "exp": "function main(a1,b1) if (a1==b1) then return true else return false end end",
+  "cond": [
+    {
+      "idx": 1,
+      "type": 2,
+      "id": "010000124b00170a05c2",
+      "ep": 1,
+      "op": 1,
+      "cmd": "on",
+      "val": "false"
+    }
+  ],
+  "act": [
+    {
+      "idx": 1,
+      "delay": 1,
+      "type": 1,
+      "id": "010000124b00170f865a",
+      "ep": 1,
+      "cmd": "on",
+      "val": false
+    }
+  ]
+}
+'''
+
+json4 = '''
+{
+  "code": 1013,
+  "serial": 1520667056959,
+  "name": "shuangkong",
+  "rid": 231114,
+  "state": 1,
+  "trig": 0,
+  "ct": "2018-03-10T15:30:57",
+  "exp": "function main(a1,b1) if (a1==b1) then return true else return false end end",
+  "cond": [
+    {
+      "idx": 1,
+      "type": 2,
+      "id": "010000124b00170a05c2",
+      "ep": 1,
+      "op": 1,
+      "cmd": "on",
+      "val": "true"
+    }
+  ],
+  "act": [
+    {
+      "idx": 1,
+      "delay": 1,
+      "type": 1,
+      "id": "010000124b00170f865a",
+      "ep": 1,
+      "cmd": "on",
+      "val": true
+    }
+  ]
+}
+'''
+
+json5 = '''
+{
+"code":1015,
+"rid":231111,
+"serial" :12004
+}'''
+
+json6 = '''
+{
+"code":1015,
+"rid":231112,
+"serial" :12004
+}'''
+
+json7 = '''
+{
+"code":1015,
+"rid":231113,
+"serial" :12004
+}'''
+
+json8 = '''
+{
+"code":1015,
+"rid":231114,
+"serial" :12004
+}'''

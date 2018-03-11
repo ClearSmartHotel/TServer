@@ -9,6 +9,7 @@ import websocket
 from common import config
 from common.DBBase import db,db_replace
 import mqtt_client
+import protocol
 
 class haier_rcu_websocket(threading.Thread):
     def __init__(self):
@@ -123,6 +124,7 @@ def dev_status_notify(data):
     #插卡取电
     if statusJson['devType'] == 2 and devStatus is not None:
         if devStatus['cardStatus'] == 1:
+            # protocol.send_scene_json()
             get_room_devices(token)
 
 

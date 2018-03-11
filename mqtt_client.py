@@ -67,6 +67,9 @@ def handle_message(topic, data):
         elif cmd == "devControl":
             print "devControl"
             send_cmd(cmdDict)
+        elif cmd == "setScene":
+            print "setScene"
+            protocol.send_scene_json()
     except Exception as e:
         print e.message
 

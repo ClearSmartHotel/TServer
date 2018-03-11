@@ -1,0 +1,10 @@
+/var/log/hlscache/*.log {
+        copytruncate
+        daily
+        missingok
+        rotate 10
+        compress
+        delaycompress
+        notifempty
+        create 0640 root adm
+}

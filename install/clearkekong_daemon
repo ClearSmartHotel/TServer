@@ -1,0 +1,19 @@
+#!/bin/bash
+
+PROG_PATH="/usr/local/clearcrane/kekong/bin/src"
+PROG_NAME="clearkekong.py"
+PYTHON_BIN="/usr/bin/python"
+
+while true
+do
+	pid=`ps ax | grep -i ${PROG_NAME}| grep -v 'grep' | awk '{print $1}'`
+	if [ -n "$pid" ]
+	then
+		echo "${PROG_NAME}  running!"
+	else
+		echo "Start ${PROG_NAME}!"
+		cd ${PROG_PATH}
+		${PYTHON_BIN} ${PROG_NAME} >/var/log/clearkekong/clearkekong.log 2>&1
+	fi
+	sleep 3
+done

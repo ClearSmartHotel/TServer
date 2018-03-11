@@ -3,7 +3,7 @@
 
 import thread,time
 from shunzhou_proxy import ShunzhouProxyFactory,reactor,TCP4ServerEndpoint
-from protocol import testFunc
+from protocol import testFunc,sendControlDev
 import mqtt_client
 import haier_proxy
 
@@ -15,9 +15,10 @@ def timerTest(no, interval):
         time.sleep(interval)
         print "runing"
         testFunc()
+
     thread.exit_thread()
 
-# thread.start_new_thread(timerTest,(1,15))
+thread.start_new_thread(timerTest,(1,2))
 
 rcu_ws = haier_proxy.haier_rcu_websocket()
 rcu_ws.start()
@@ -27,3 +28,6 @@ m.start()
 endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())
 reactor.run()
+
+
+
