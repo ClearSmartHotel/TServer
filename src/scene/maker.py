@@ -72,6 +72,7 @@ class StrategyMaker:
                 act = json.loads(dev.get("act"))
                 obj.update(act)
                 sJson["cond"].append(obj)
+                condIdx += 1
             else:                   #act 执行动作
                 obj = {
                     "idx": actIdx,
@@ -83,6 +84,7 @@ class StrategyMaker:
                 act = json.loads(dev.get("act"))
                 obj.update(act)
                 sJson["act"].append(obj)
+                actIdx += 1
         print json.dumps(sJson)
         self.sJson = sJson
         return  sJson
