@@ -7,7 +7,7 @@ import time
 import haier_proxy
 import mqtt_client
 from common import config
-from src.common.DBBase import db, db_replace
+from common.DBBase import db, db_replace
 
 serial = 0  #发送消息的序列号
 
@@ -260,7 +260,7 @@ def testFunc():
     else:
         onOff = 1
 
-def send_scene_json():
+def end_scene_json():
     print "send scene json"
     # sendMessage("2c:6a:6f:00:52:6f", json.loads(json1))
     # sendMessage("2c:6a:6f:00:52:6f", json.loads(json2))

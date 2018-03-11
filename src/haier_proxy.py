@@ -10,7 +10,7 @@ import websocket
 
 import mqtt_client
 from common import config
-from src.common.DBBase import db, db_replace
+from common.DBBase import db, db_replace
 
 
 class haier_rcu_websocket(threading.Thread):
@@ -55,6 +55,7 @@ def on_open(ws):
     thread = threading.Thread(target=heartbeat_thread)
     thread.start()
 
+#websocket收到消息统一在这里处理
 def handle_message(msg):
     print "handle haier rcu msg:", msg
     try:
@@ -141,6 +142,7 @@ def send_rcu_cmd(cmd):
         return 0
     handle_message(r.text)
 
+#获取整个项目所有房间的authToken
 def get_room_auth_cmd():
     cmd = '''
         {
@@ -151,6 +153,7 @@ def get_room_auth_cmd():
         '''%(config.haier_rcu_project_autoken)
     return cmd
 
+#获取房间services状态
 def get_room_services(authToken):
     cmd = '''
         {
@@ -160,6 +163,7 @@ def get_room_services(authToken):
         ''' % (authToken)
     send_rcu_cmd(cmd)
 
+#获取房间设备列表
 def get_room_devices(authToken):
     cmd = {
                 "cmd": "fetchDevices",
@@ -169,6 +173,7 @@ def get_room_devices(authToken):
 
     send_rcu_cmd(json.dumps(cmd))
 
+#将房间设备状态更新到数据库
 def update_room_devices(data):
     authToken = data.get('authToken', None)
     devInfo = data.get('devInfos', None)
@@ -188,7 +193,7 @@ def update_room_devices(data):
             d.pop('devName')
             db.update('HAIER_DEVICE', where={'devId':d['devId']}, **d)
 
-
+#更新房间service token
 def updateService(data):
     services = data.get('services', None)
     authToken = data.get('authToken', None)
@@ -201,7 +206,7 @@ def updateService(data):
                                    "serviceNameChs": s["serviceNameChs"],
                                    "authToken": s['authToken']}, s)
 
-
+#控制RCUservice状态
 def control_room_services(authToken, type, enable):
     serviceInfo = db.query("select * from SERVICE where authToken='%s' and serviceType='%d'"%(authToken, type))
     if len(serviceInfo) < 1:

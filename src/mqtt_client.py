@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 import haier_proxy
 import protocol
 from common import config
-from src.common.DBBase import db
+from common.DBBase import db
 
 mqttclient = mqtt.Client()
 
