@@ -163,11 +163,29 @@ class GroupMaker:
         }
         sendMessage(self.gw_mac, self.gjson)
 
+def setAllScene(roomNo):
+    sMaker = StrategyMaker(roomNo)
+    sList = sMaker.getSupportStrategyList()
+    for s in sList:
+        sMaker.makeStrategyJson(s)
+        sMaker.send2gw()
 
+    gMaker = GroupMaker(roomNo)
+    gMaker.makeJson("all_light")
+    gMaker.send2gw()
+
+def setSingleScene(roomNo, stragegy):
+    sMaker = StrategyMaker(roomNo)
+    sMaker.makeStrategyJson(stragegy)
+    sMaker.send2gw()
 
 def testFunc():
     sMaker = StrategyMaker("2508")
     sMaker.makeStrategyJson("睡眠")
+    sMaker.send2gw()
+
+    sMaker = StrategyMaker("2508")
+    sMaker.makeStrategyJson("起夜")
     sMaker.send2gw()
 
     gMaker = GroupMaker("2508")
