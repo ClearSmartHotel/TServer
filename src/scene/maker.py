@@ -163,4 +163,4 @@ def testFunc():
     gMaker.send2gw()
     gMaker.sendControlDict("all_light",{"on" : 1})
 
-testFunc()
+#testFunc()
