@@ -17,6 +17,18 @@ def getGwList():
             gw.update({"ol" : 0})
     return gwList
 
+def getGwInfo(gw_mac):
+    gInfo = db.select("GETWAY",where = {"MAC":gw_mac}).first()
+    if gInfo is None:
+        return None
+    cTime = time.time()
+    lastTime = gInfo.get("LAST_TIMESTAMP")
+    if cTime - lastTime < 60:
+        gInfo.update({"ol" : 1})
+    else:
+        gInfo.update({"ol" : 0})
+    return gInfo
+
 def getDevList(gw_mac):
     devList = db.select("DEVICE", where = {"gw" : gw_mac})
     return list(devList)

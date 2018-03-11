@@ -168,7 +168,9 @@ def revStatusData(clinet_msg , data):
         return
     elif control == 1:
         #上报设备删除退网
-
+        devList = data.get("id")
+        for id in devList:
+            db.delete("DEVICE",where = {"id" : id})
         #返回response
         resp = data
         resp.update({"code" : 1004 , "result" : 0})
