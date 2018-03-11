@@ -3,6 +3,7 @@
 import json,time,random
 from common.DBBase import db,db_replace
 from protocol import sendMessage
+from common.func import str2List
 
 def getSerial():
     return random.randint(0,1000)
@@ -20,13 +21,14 @@ class StrategyMaker:
 
     def delStrategy(self,rid):
         req = {
-            "code":rid,
+            "code":1015,
+            "rid" : rid,
             "serial" : getSerial(),
         }
         sendMessage(self.gw_mac, req)
 
     def makeStrategyJson(self,name):
-        #得到场景 的 信息
+        #得到策略 的 信息
         sInfo = db.select("STRATEGY_ALL_INDEX",where = {"name": name}).first()
         print sInfo
         if sInfo is None:
@@ -46,7 +48,7 @@ class StrategyMaker:
         #生成策略Josn
         sJson = {
             "code":1013,
-            "serial" :random.randint(0,1000),
+            "serial" :getSerial(),
             "name":name,
             "rid": self.rid,
             "state":1,
@@ -90,10 +92,75 @@ class StrategyMaker:
         sendMessage(self.gw_mac,self.sJson)
         return
 
+class GroupMaker:
+    def __init__(self,gw_mac,room_type):
+        self.room_type = room_type
+        self.gw_mac = gw_mac
+        pass
+    def getInfo(self,name):
+        gInfo = db.select("GROUP_INFO", where={"group_name": name}).first()
+        if gInfo is None:
+            print "group is not found ! name: %s"%name
+            raise Exception("group is not found ! name: %s"%name)
+        return gInfo
+
+    def makeJson(self,name):
+        # 得到分组 的 信息
+        gInfo = self.getInfo(name)
+        self.gid = gInfo.get("gid")
+        gJson = {
+            "code":1005,
+            "name":name,
+            "gid": self.gid,
+            "serial" :getSerial(),
+            "device":[]
+        }
+        #得到设备列表信息
+        devList = gInfo.get("dev_list")
+        devList = str2List(devList)
+        for devName in devList:
+            devInfo = db.select("DEVICE",where = {"devName":devName,"gw":self.gw_mac}).first()
+            if devInfo is not None:
+                gJson["device"].append({"id": devInfo["id"],"ep" : devInfo["ep"]})
+        print json.dumps(gJson)
+        self.gjson  = gJson
+
+    def delGroup(self,gid):
+        req = {
+            "code":1007,
+            "gid" : gid,
+            "serial" : getSerial(),
+        }
+        sendMessage(self.gw_mac, req)
+
+    def send2gw(self):
+        self.delGroup(self.gid)
+        sendMessage(self.gw_mac, self.gjson)
+
+    def sendControlDict(self,group_name , paraDict):
+        # 得到分组 的 信息
+        gInfo = self.getInfo(group_name)
+        self.gid = gInfo.get("gid")
+
+        #发出请求
+        req = {
+            "code":1006,
+            "gid":self.gid,
+            "serial" :getSerial(),
+            "streams": paraDict
+        }
+        sendMessage(self.gw_mac, self.gjson)
+
+
 
 def testFunc():
-    testMaker = StrategyMaker("2c:6a:6f:00:52:6f","标准")
-    testMaker.makeStrategyJson("睡眠")
-    testMaker.send2gw()
+    sMaker = StrategyMaker("2c:6a:6f:00:52:6f","标准")
+    sMaker.makeStrategyJson("睡眠")
+    sMaker.send2gw()
+
+    gMaker = GroupMaker("2c:6a:6f:00:52:6f","标准")
+    gMaker.makeJson("all_light")
+    gMaker.send2gw()
+    gMaker.sendControlDict("all_light",{"on" : 1})
 
 testFunc()
