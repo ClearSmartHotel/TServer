@@ -18,7 +18,7 @@ def timerTest(no, interval):
     while True:
         time.sleep(interval)
         print "runing"
-        scene.maker.testFunc()
+        # scene.maker.testFunc()
         break
 
     thread.exit_thread()

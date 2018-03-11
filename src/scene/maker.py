@@ -57,7 +57,7 @@ class StrategyMaker:
             "name":name,
             "rid": self.rid,
             "state":1,
-            "trig" :1,
+            "trig" :0,
             "ct":time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime()),
             "exp":"function main(a1,b1) if (a1==b1) then return true else return false end end",
             "cond" : [],
@@ -162,7 +162,7 @@ class GroupMaker:
             "serial" :getSerial(),
             "streams": paraDict
         }
-        sendMessage(self.gw_mac, self.gjson)
+        sendMessage(self.gw_mac, req)
 
 def setAllScene(roomNo):
     sMaker = StrategyMaker(roomNo)
@@ -181,17 +181,17 @@ def setSingleScene(roomNo, stragegy):
     sMaker.send2gw()
 
 def testFunc():
-    sMaker = StrategyMaker("2508")
-    sMaker.makeStrategyJson("睡眠")
-    sMaker.send2gw()
-
-    sMaker = StrategyMaker("2508")
-    sMaker.makeStrategyJson("起夜")
-    sMaker.send2gw()
-
+    # sMaker = StrategyMaker("2508")
+    # sMaker.makeStrategyJson("睡眠")
+    # sMaker.send2gw()
+    #
+    # sMaker = StrategyMaker("2508")
+    # sMaker.makeStrategyJson("起夜")
+    # sMaker.send2gw()
+    #
     gMaker = GroupMaker("2508")
-    gMaker.makeJson("all_light")
-    gMaker.send2gw()
-    gMaker.sendControlDict("all_light",{"on" : 1})
+    # gMaker.makeJson("all_light")
+    # gMaker.send2gw()
+    gMaker.sendControlDict("all_light",{"on" : 0})
 
 #testFunc()
