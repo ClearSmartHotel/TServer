@@ -9,9 +9,14 @@ def getSerial():
     return random.randint(0,1000)
 
 class StrategyMaker:
-    def __init__(self,gw_mac,room_type):
-        self.room_type = room_type
-        self.gw_mac = gw_mac
+    def __init__(self,roomNo):
+        rInfo = db.select("ROOM", where={"roomNo" : roomNo}).first()
+        if rInfo is None:
+            print "roomNo is not exist: %s" % str(roomNo)
+            raise Exception("roomNo is not exist: %s" % str(roomNo))
+
+        self.room_type = rInfo["room_type"]
+        self.gw_mac = rInfo["gw"]
         self.sJson = {}
         pass
 
@@ -42,7 +47,7 @@ class StrategyMaker:
         print "json maker sql: " , sql
         sDevList = db.query(sql)
         sDevList = list(sDevList)
-        print list(sDevList)
+        print json.dumps(sDevList)
 
         self.rid = sInfo.get("rid"),
         #生成策略Josn
@@ -156,11 +161,11 @@ class GroupMaker:
 
 
 def testFunc():
-    sMaker = StrategyMaker("2c:6a:6f:00:52:6f","标准")
+    sMaker = StrategyMaker("2508")
     sMaker.makeStrategyJson("睡眠")
     sMaker.send2gw()
 
-    gMaker = GroupMaker("2c:6a:6f:00:52:6f","标准")
+    gMaker = GroupMaker("2508")
     gMaker.makeJson("all_light")
     gMaker.send2gw()
     gMaker.sendControlDict("all_light",{"on" : 1})
