@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import json,time
-from common.DBBase import db,db_replace
+import time
+
+from src.common.DBBase import db
+
 
 def getGwList():
     gwList = db.select("GETWAY")

@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
-import os
 import web
+
 import config
 
 db = web.database (

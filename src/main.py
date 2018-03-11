@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
-import thread,time
-from shunzhou_proxy import ShunzhouProxyFactory,reactor,TCP4ServerEndpoint
-from protocol import testFunc,sendControlDev
-import mqtt_client
+import thread
+import time
+
 import haier_proxy
+import mqtt_client
+from protocol import testFunc
+from shunzhou_proxy import ShunzhouProxyFactory, reactor, TCP4ServerEndpoint
+
 
 #测试用定时器线程，
 def timerTest(no, interval):

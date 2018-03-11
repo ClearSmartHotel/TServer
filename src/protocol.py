@@ -1,11 +1,13 @@
 
 # -*- coding: utf-8 -*-
 
-import json,time
-from common.DBBase import db,db_replace
+import json
+import time
+
+import haier_proxy
 import mqtt_client
 from common import config
-import haier_proxy
+from src.common.DBBase import db, db_replace
 
 serial = 0  #发送消息的序列号
 

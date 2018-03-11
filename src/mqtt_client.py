@@ -2,12 +2,13 @@
 
 import json
 import threading
+
 import paho.mqtt.client as mqtt
-from common import config
-from common.DBBase import db
+
 import haier_proxy
 import protocol
-
+from common import config
+from src.common.DBBase import db
 
 mqttclient = mqtt.Client()
 
@@ -66,7 +67,7 @@ def handle_message(topic, data):
             print "sceneControl"
         elif cmd == "devControl":
             print "devControl"
-            send_cmd(cmdDict)
+            send_cmd(cmdDic
         elif cmd == "setScene":
             print "setScene"
             protocol.send_scene_json()

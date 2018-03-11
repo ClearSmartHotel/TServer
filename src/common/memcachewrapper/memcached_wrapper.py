@@ -7,7 +7,7 @@ Created on
 import sys
 sys.path.append("..")
 
-import common.config as c
+from src import common as c
 from memcache_ring import MemcacheRing
 
 #使用方法

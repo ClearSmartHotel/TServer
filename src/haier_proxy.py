@@ -4,17 +4,19 @@ import json
 import ssl
 import threading
 import time
+
 import requests
 import websocket
-from common import config
-from common.DBBase import db,db_replace
+
 import mqtt_client
-import protocol
+from common import config
+from src.common.DBBase import db, db_replace
+
 
 class haier_rcu_websocket(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        self.rcu_server = "wss://" + config.haier_rcu_host +":50443/puietelRcuApiPush"
+        self.rcu_server = "wss://" + config.haier_rcu_host + ":50443/puietelRcuApiPush"
         self.ws = websocket.WebSocketApp(self.rcu_server,
                                         on_open=on_open,
                                         on_message=on_message,
