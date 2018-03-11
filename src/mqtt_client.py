@@ -67,7 +67,7 @@ def handle_message(topic, data):
             print "sceneControl"
         elif cmd == "devControl":
             print "devControl"
-            send_cmd(cmdDic
+            send_cmd(cmdDict)
         elif cmd == "setScene":
             print "setScene"
             protocol.send_scene_json()
