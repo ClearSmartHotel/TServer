@@ -16,7 +16,7 @@ db = web.database (
 
 def db_replace(table,filter,data):
 
-    # INSERT INTO GETWAY (MAC,LAST_TIMESTAMP) VALUES ("125",15) ON DUPLICATE KEY UPDATE LAST_TIMESTAMP = 15;
+    # INSERT INTO ROOM (gw,last_timestamp) VALUES ("125",15) ON DUPLICATE KEY UPDATE last_timestamp = 15;
 
     ret = db.select(table, where=filter).first()
     if ret is None:

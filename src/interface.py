@@ -2,15 +2,15 @@
 
 import time
 
-from src.common.DBBase import db
+from common.DBBase import db
 
 
 def getGwList():
-    gwList = db.select("GETWAY")
+    gwList = db.select("ROOM")
     gwList = list(gwList)
     cTime = time.time()
     for gw in gwList:
-        lastTime = gw.get("LAST_TIMESTAMP")
+        lastTime = gw.get("last_timestamp")
         if cTime - lastTime < 60:
             gw.update({"ol" : 1})
         else:
@@ -18,11 +18,11 @@ def getGwList():
     return gwList
 
 def getGwInfo(gw_mac):
-    gInfo = db.select("GETWAY",where = {"MAC":gw_mac}).first()
+    gInfo = db.select("ROOM",where = {"gw":gw_mac}).first()
     if gInfo is None:
         return None
     cTime = time.time()
-    lastTime = gInfo.get("LAST_TIMESTAMP")
+    lastTime = gInfo.get("last_timestamp")
     if cTime - lastTime < 60:
         gInfo.update({"ol" : 1})
     else:

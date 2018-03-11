@@ -114,10 +114,10 @@ def revHeartBeat(clinet_msg,data):
     # 更新网关状态:
     if "gw" in data:
         macInfo = {
-            "MAC": data["gw"]["mac"],
-            "LAST_TIMESTAMP": time.time()
+            "gw": data["gw"]["mac"],
+            "last_timestamp": time.time()
         }
-        db_replace("GETWAY",{"MAC": macInfo["MAC"]},macInfo)
+        db_replace("ROOM",{"gw": macInfo["gw"]},macInfo)
 
     #更新设备列表:
     dList = data["device"]
