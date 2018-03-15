@@ -68,7 +68,7 @@ POST
 ```
 
 - - -
-##### 四、请求操作指令
+##### 四、微信端指令
 
 - 接口地址
 http://iotdtest.cleartv.cn/iotd_backend/wxCmd
@@ -169,5 +169,53 @@ token过期
 
 ```
 
+- - -
+##### 五、TV端控制指令，
+
+- 接口地址
+http://iotdtest.cleartv.cn/iotd_backend/tvCmd
+
+- 方法
+POST
+
+- 参数
+-json
+```
+{
+"projectName":"tzgjhotel",
+"roomNo":"2508",
+"wxCmd":"sceneControl",//其余参照上面微信端指令
+"sceneName":"灯光全关"//情景名称
+}
+```
+- - -
+##### 六、设备网关场景
+
+- 接口地址
+http://iotdtest.cleartv.cn/iotd_backend/setScene
+
+- 方法
+GET 
+
+- 参数
+```
+projectName:tzgjhotel//项目名
+roomNo：A101//房间号
+sceneName:allScene//设备所有场景包括灯光分组，起夜//单个场景设备
 ```
 
+- - -
+##### 七、设备网关分组
+
+- 接口地址
+http://iotdtest.cleartv.cn/iotd_backend/setGroup
+
+- 方法
+GET 
+
+- 参数
+```
+projectName:tzgjhotel//项目名
+roomNo：A101//房间号
+groupName:all_light//灯光分组，起夜
+```

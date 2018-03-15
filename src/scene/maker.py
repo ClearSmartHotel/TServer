@@ -2,8 +2,8 @@
 
 import json,time,random
 from common.DBBase import db,db_replace
-from protocol import sendMessage
 from common.func import str2List
+import protocol
 
 def getSerial():
     return random.randint(0,1000)
@@ -30,7 +30,7 @@ class StrategyMaker:
             "rid" : rid,
             "serial" : getSerial(),
         }
-        sendMessage(self.gw_mac, req)
+        protocol.sendMessage(self.gw_mac, req)
 
     def makeStrategyJson(self,name):
         #得到策略 的 信息
@@ -43,7 +43,7 @@ class StrategyMaker:
             table = sInfo.get("table_name")
 
         #得到场景的设备列表
-        sql = "select name,id,ep,gw,tigger,act from %s s,DEVICE d where d.gw = \"%s\" and s.name=d.devName and s.room_type=\"%s\"" %(str(table),self.gw_mac,self.room_type)
+        sql = "select name,id,ep,gw,tigger,act,delay from %s s,DEVICE d where d.gw = \"%s\" and s.name=d.devName and s.room_type=\"%s\"" %(str(table),self.gw_mac,self.room_type)
         print "json maker sql: " , sql
         sDevList = db.query(sql)
         sDevList = list(sDevList)
@@ -86,6 +86,7 @@ class StrategyMaker:
                     "id" : dev["id"],
                     "ep" : dev["ep"]
                 }
+                print "act:" ,str(dev.get("act"))
                 act = json.loads(dev.get("act"))
                 obj.update(act)
                 sJson["act"].append(obj)
@@ -97,7 +98,7 @@ class StrategyMaker:
 
     def send2gw(self):
         self.delStrategy(self.rid)
-        sendMessage(self.gw_mac,self.sJson)
+        protocol.sendMessage(self.gw_mac,self.sJson)
         return
 
 class GroupMaker:
@@ -144,11 +145,11 @@ class GroupMaker:
             "gid" : gid,
             "serial" : getSerial(),
         }
-        sendMessage(self.gw_mac, req)
+        protocol.sendMessage(self.gw_mac, req)
 
     def send2gw(self):
         self.delGroup(self.gid)
-        sendMessage(self.gw_mac, self.gjson)
+        protocol.sendMessage(self.gw_mac, self.gjson)
 
     def sendControlDict(self,group_name , paraDict):
         # 得到分组 的 信息
@@ -162,13 +163,13 @@ class GroupMaker:
             "serial" :getSerial(),
             "streams": paraDict
         }
-        sendMessage(self.gw_mac, req)
+        protocol.sendMessage(self.gw_mac, req)
 
 def setAllScene(roomNo):
     sMaker = StrategyMaker(roomNo)
     sList = sMaker.getSupportStrategyList()
     for s in sList:
-        sMaker.makeStrategyJson(s)
+        sMaker.makeStrategyJson(s['name'])
         sMaker.send2gw()
 
     gMaker = GroupMaker(roomNo)
@@ -180,18 +181,11 @@ def setSingleScene(roomNo, stragegy):
     sMaker.makeStrategyJson(stragegy)
     sMaker.send2gw()
 
-def testFunc():
-    # sMaker = StrategyMaker("2508")
-    # sMaker.makeStrategyJson("睡眠")
-    # sMaker.send2gw()
-    #
-    # sMaker = StrategyMaker("2508")
-    # sMaker.makeStrategyJson("起夜")
-    # sMaker.send2gw()
-    #
-    gMaker = GroupMaker("2508")
-    # gMaker.makeJson("all_light")
-    # gMaker.send2gw()
-    gMaker.sendControlDict("all_light",{"on" : 0})
+def setGroup(roomNo, groupName):
+    gMaker = GroupMaker(roomNo)
+    gMaker.makeJson(groupName)
+    gMaker.send2gw()
 
-#testFunc()
+def controlGroup(roomNo, groupName, paraDict):
+    gMaker = GroupMaker(roomNo)
+    gMaker.sendControlDict(groupName, paraDict)

@@ -7,24 +7,21 @@ import time
 import haier_proxy
 import mqtt_client
 from protocol import testFunc
-import scene.maker
 from shunzhou_proxy import ShunzhouProxyFactory, reactor, TCP4ServerEndpoint
 
 
 #测试用定时器线程，
 def timerTest(no, interval):
-    onOff = 1
     print "timer thread start"
     while True:
         time.sleep(interval)
         print "runing"
-        # scene.maker.testFunc()
-        break
+        testFunc()
 
     thread.exit_thread()
 
 
-thread.start_new_thread(timerTest,(1,10))
+# thread.start_new_thread(timerTest,(1,5))
 
 rcu_ws = haier_proxy.haier_rcu_websocket()
 rcu_ws.start()

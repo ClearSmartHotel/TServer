@@ -9,6 +9,8 @@ import haier_proxy
 import protocol
 from common import config
 from common.DBBase import db
+from scene import maker as scene
+import constant
 
 mqttclient = mqtt.Client()
 
@@ -29,6 +31,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(config.project_name)
 
 def on_message(client, userdata, msg):
+    print client
     topic = msg.topic
     data = msg.payload.decode('gbk')
     print topic, data
@@ -65,14 +68,39 @@ def handle_message(topic, data):
             get_dev_list(cmdDict)
         elif cmd == "sceneControl":  # 微信场景控制
             print "sceneControl"
+            crontrolScene(cmdDict)
         elif cmd == "devControl":
             print "devControl"
             send_cmd(cmdDict)
         elif cmd == "setScene":
             print "setScene"
-            protocol.send_scene_json()
+            set_scene(cmdDict)
+        elif cmd == "setGroup":
+            print "setScene"
+            scene.setGroup(cmdDict['roomNo'],cmdDict['groupName'])
     except Exception as e:
         print e.message
+
+def crontrolScene(dictData):
+    sceneName = dictData.get('sceneName', None)
+    roomNo = dictData.get('roomNo', None)
+
+    if sceneName is not None and roomNo is not None:
+        if sceneName == '灯光全开':
+            scene.controlGroup(roomNo, constant.GROUP_ALL_LIGHT, {"on":1})
+        elif sceneName == '灯光全关':
+            scene.controlGroup(roomNo, constant.GROUP_ALL_LIGHT, {"on":0})
+
+def set_scene(dictData):
+    roomNo = dictData['roomNo']
+    sceneName = dictData['sceneName']
+    if sceneName == 'allScene':
+        print "set all scene",roomNo
+        scene.setAllScene(roomNo)
+    else:
+        print "set single scene:",roomNo,sceneName
+        scene.setSingleScene(roomNo, sceneName)
+
 
 def get_dev_list(dictData):
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (dictData['roomNo']))
@@ -105,8 +133,9 @@ def send_cmd(dictData):
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (dictData['roomNo']))
     if devName is None or len(roomInfo) < 1:
         return 0
-    rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s'"%(devName))
-    gwInfo = db.query("select * from DEVICE where devName='%s'" % (devName))
+    room = roomInfo[0]
+    rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s' and authToken='%s'"%(devName, room['authToken']))
+    gwInfo = db.query("select * from DEVICE where devName='%s'and gw='%s'" % (devName, room['gw']))
     devStatus = dictData.get('devStatus', None)
     if len(rcuInfo) < 1 and len(gwInfo) < 1:
         print "cant find device:", devName
@@ -135,13 +164,17 @@ def send_cmd(dictData):
         print "gw control"
         dev = gwInfo[0]
         actionCode = dictData.get('actionCode')
-        #如果actionCode是2，取反操作
+        #先判断 是不是网关电机
+        if dev['did'] == constant.SZ_CURTAIN_DID:
+            protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": actionCode}, gw_mac=room['gw'])
+            return 0
+        #开关面板如果actionCode是2，取反操作
         if actionCode == 2 and dev['onoff'] in {0, 1}:
             actionCode = 1 - dev['onoff']
         elif actionCode == 2:
             actionCode = 1
         paraDict = {"on": actionCode}
-        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=dev['gw'])
+        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=room['gw'])
 
 
 if __name__ == "__main__":

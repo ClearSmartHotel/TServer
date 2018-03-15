@@ -5,7 +5,7 @@ import json,thread,time
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet.endpoints import TCP4ServerEndpoint
 from twisted.internet import reactor
-from protocol import dataPrase,testFunc
+from protocol import dataPrase
 
 #保存连接相关数据
 class ShunzhouProxy():

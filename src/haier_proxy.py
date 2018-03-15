@@ -11,6 +11,13 @@ import websocket
 import mqtt_client
 from common import config
 from common.DBBase import db, db_replace
+import scene.maker
+import protocol
+import constant
+import thread
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 class haier_rcu_websocket(threading.Thread):
@@ -57,7 +64,7 @@ def on_open(ws):
 
 #websocket收到消息统一在这里处理
 def handle_message(msg):
-    print "handle haier rcu msg:", msg
+    print "handle haier rcu msg:", str(msg)
     try:
         data = json.loads(msg)
         cmd = data.get("cmd", None)
@@ -127,8 +134,12 @@ def dev_status_notify(data):
     #插卡取电
     if statusJson['devType'] == 2 and devStatus is not None:
         if devStatus['cardStatus'] == 1:
-            # protocol.send_scene_json()
             get_room_devices(token)
+            thread.start_new_thread(welcomeStrategy,(room, 3))
+            thread.start_new_thread(welcomeStrategy, (room, 4))
+        elif devStatus['cardStatus'] == 0:
+            thread.start_new_thread(goodbyeStrategy, (room, 9))
+            thread.start_new_thread(goodbyeStrategy, (room, 10))
 
 
 
@@ -172,6 +183,38 @@ def get_room_devices(authToken):
             }
 
     send_rcu_cmd(json.dumps(cmd))
+
+#迎宾模式，延时3秒打开所有灯
+def welcomeStrategy(room, interval):
+    print "welcomeStrategy:",room['roomNo']
+    time.sleep(interval)
+    cardInfo = db.select('HAIER_DEVICE', where={'devType': constant.HAIER_CARD_TYPE, 'authToken': room['authToken']})
+    for card in cardInfo:
+        cStatus = json.loads(card['devStatus'])
+        print "cardStatus:", cStatus
+        if cStatus['cardStatus'] == 0:
+            thread.exit()
+    scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on":1})
+    #打开所有窗
+    curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
+    for dev in curtainInfo:
+        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
+    thread.exit_thread()
+
+#送宾模式，关掉所有窗
+def goodbyeStrategy(room, interval):
+    print "goodbyeStrategy:", room['roomNo']
+    time.sleep(interval)
+    print "goodbyeStrategy thread"
+    cardInfo = db.select('HAIER_DEVICE', where={'devType':constant.HAIER_CARD_TYPE,'authToken':room['authToken']})
+    for card in cardInfo:
+        cStatus = json.loads(card['devStatus'])
+        print "cardStatus:",cStatus
+        if cStatus['cardStatus'] == 0:
+            curtainInfo = db.select('DEVICE', where={'did':constant.SZ_CURTAIN_DID,'gw':room['gw']})
+            for dev in curtainInfo:
+                protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 0}, gw_mac=room['gw'])
+    thread.exit_thread()
 
 #将房间设备状态更新到数据库
 def update_room_devices(data):
