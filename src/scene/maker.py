@@ -4,6 +4,7 @@ import json,time,random
 from common.DBBase import db,db_replace
 from common.func import str2List
 import protocol
+import thread
 
 def getSerial():
     return random.randint(0,1000)
@@ -93,8 +94,10 @@ class StrategyMaker:
                 actIdx += 1
         print "scene json"
         print json.dumps(sJson)
-        self.sJson = sJson
-        return  sJson
+        # self.sJson = sJson
+        # return  sJson
+        self.sJson = ruleJson
+        return json.dumps(ruleJson)
 
     def send2gw(self):
         self.delStrategy(self.rid)
@@ -168,13 +171,22 @@ class GroupMaker:
 def setAllScene(roomNo):
     sMaker = StrategyMaker(roomNo)
     sList = sMaker.getSupportStrategyList()
+    sleepTime = 1
     for s in sList:
-        sMaker.makeStrategyJson(s['name'])
-        sMaker.send2gw()
+        thread.start_new_thread(makeStrategyFun,(sMaker, s['name'], sleepTime))
+        sleepTime += 2
+        # sMaker.makeStrategyJson(s['name'])
+        # sMaker.send2gw()
+
 
     gMaker = GroupMaker(roomNo)
     gMaker.makeJson("all_light")
     gMaker.send2gw()
+
+def makeStrategyFun(sMaker, name, sleepTime):
+    time.sleep(sleepTime)
+    sMaker.makeStrategyJson(name)
+    sMaker.send2gw()
 
 def setSingleScene(roomNo, stragegy):
     sMaker = StrategyMaker(roomNo)
@@ -189,3 +201,30 @@ def setGroup(roomNo, groupName):
 def controlGroup(roomNo, groupName, paraDict):
     gMaker = GroupMaker(roomNo)
     gMaker.sendControlDict(groupName, paraDict)
+
+ruleJson = {
+	"state": 1,
+	"code": 1013,
+	"cond": [{
+		"val": "true",
+		"idx": 1,
+		"cmd": "on",
+		"type": 2,
+		"id": "010000124b000e0c0395",
+		"ep": 1
+	}],
+	"name": "明亮模式",
+	"exp": "function main(a1,b1) if (a1==b1) then return true else return false end end",
+	"act": [{
+		"delay": 0,
+		"val": 1,
+		"idx": 1,
+		"cmd": "on",
+		"type": 3,
+		"gid": 1
+	}],
+	"serial": 346,
+	"rid": 3,
+	"trig": 0,
+	"ct": "2018-03-17T20:04:38"
+}

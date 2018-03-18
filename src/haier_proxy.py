@@ -81,7 +81,7 @@ def handle_message(msg):
         elif cmd == "fetchDevices":
             update_room_devices(data)
         elif cmd == "serviceStatusNotify":
-            pass
+            service_status_notify(data)
     except Exception as e:
         print e
 
@@ -135,6 +135,7 @@ def dev_status_notify(data):
     if statusJson['devType'] == 2 and devStatus is not None:
         if devStatus['cardStatus'] == 1:
             get_room_devices(token)
+            get_room_services(token)
             thread.start_new_thread(welcomeStrategy,(room, 3))
             thread.start_new_thread(welcomeStrategy, (room, 4))
         elif devStatus['cardStatus'] == 0:
@@ -243,18 +244,18 @@ def updateService(data):
     if services is not None and authToken is not None:
         for s in services:
             s['authToken'] = authToken
+            s['devName'] = constant.HAIER_SERVICE_DEVNAME_DICT[s['serviceType']]
             db_replace("SERVICE", {"serviceType": s["serviceType"],
                                    "serviceStatus": s["serviceStatus"],
                                    "serviceToken": s["serviceToken"],
                                    "serviceNameChs": s["serviceNameChs"],
                                    "authToken": s['authToken']}, s)
 
-#控制RCUservice状态
+#控制RCUservice状态,现在不用这个接口
 def control_room_services(authToken, type, enable):
     serviceInfo = db.query("select * from SERVICE where authToken='%s' and serviceType='%d'"%(authToken, type))
     if len(serviceInfo) < 1:
         get_room_services(authToken)
-        global serviceInfo
         serviceInfo = db.query("select * from SERVICE where authToken='%s' and serviceType='%d'" % (authToken, type))
         if len(serviceInfo) < 1:
             print "cant find service info"
@@ -268,10 +269,62 @@ def control_room_services(authToken, type, enable):
                 "cmd": "requestServiceControl",
                 "ignoreCardStatus": 0,
                 "serviceToken": service['serviceToken'],
-                "enableService": enable,
+                "enableService": enable
             }
 
     send_rcu_cmd(json.dumps(cmd))
+
+#控制RCUservice状态，新接口
+def control_service(service, actionCode):
+    cmd = {
+        "serviceType": service['serviceType'],
+        "authToken": service['authToken'],
+        "cmd": "requestServiceControl",
+        "ignoreCardStatus": 0,
+        "serviceToken": service['serviceToken'],
+        "enableService": actionCode
+    }
+
+    send_rcu_cmd(json.dumps(cmd))
+
+def service_status_notify(data):
+    authToken = data.get('authToken', None)
+    serviceToken = data.get('serviceToken', None)
+    if authToken is None or serviceToken is None:
+        print "wrong service status nofify message:",str(data)
+        return 0
+    serviceDict = {
+        'authToken': data['authToken'],
+        'serviceToken': data['serviceToken'],
+        'serviceStatus': data['serviceStatus'],
+        'serviceType': data['serviceType'],
+        'devName': constant.HAIER_SERVICE_DEVNAME_DICT[data['serviceType']]
+    }
+
+    db_replace('SERVICE', {'authToken':authToken, 'serviceToken':serviceToken}, serviceDict)
+
+    # 请稍后104，请勿扰105，两个服务互斥处理，控制另一个服务关闭
+    if data['serviceStatus'] == 1 and data['serviceType'] in {104, 105}:
+        mutexType = 209 - data['serviceType']
+        mutexInfo = db.select("SERVICE", where={'serviceType':mutexType,'serviceStatus':1})
+        for s in mutexInfo:
+            control_service(s, 0)
+
+    roomInfo = db.select('ROOM',where={'authToken':authToken})
+    if len(roomInfo) < 1:
+        print "no such room:",authToken
+        return 0
+    room = roomInfo[0]
+
+    #mqtt反馈状态更新
+    statusDict = {
+        'devName':serviceDict['devName'],
+        'onLine': 1,
+        'actionCode': serviceDict['serviceStatus'],
+        'roomNo':room['roomNo']
+    }
+    mqtt_client.publish_dev_status(statusDict)
+
 
 if __name__ == "__main__":
     rcu_ws = haier_rcu_websocket()

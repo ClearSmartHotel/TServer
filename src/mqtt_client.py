@@ -111,6 +111,7 @@ def get_dev_list(dictData):
     room = roomInfo[0]
     rcuInfo = db.query("select * from HAIER_DEVICE where authToken='%s'" % (room['authToken']))
     gwInfo = db.query("select * from DEVICE where gw='%s' and controlType=1" % (room['gw']))
+    serviceInfo = db.query("select * from SERVICE where authToken='%s'" % (room['authToken']))
     devListJson = {"wxCmd":"devList","devList":[]}
     for item in rcuInfo:
         devJson = {'devName': item['devName'],
@@ -126,6 +127,12 @@ def get_dev_list(dictData):
                    'actionCode': item['onoff']}
         devListJson['devList'].append(devJson)
 
+    for item in serviceInfo:
+        devJson = {'devName': item['devName'],
+                   'onLine': 1,
+                   'actionCode': item['serviceStatus']}
+        devListJson['devList'].append(devJson)
+
     publish_message(config.project_name + dictData['roomNo'], json.dumps(devListJson))
 
 def send_cmd(dictData):
@@ -136,8 +143,9 @@ def send_cmd(dictData):
     room = roomInfo[0]
     rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s' and authToken='%s'"%(devName, room['authToken']))
     gwInfo = db.query("select * from DEVICE where devName='%s'and gw='%s'" % (devName, room['gw']))
+    serviceInfo = db.query("select * from SERVICE where devName='%s' and authToken='%s'" % (devName, room['authToken']))
     devStatus = dictData.get('devStatus', None)
-    if len(rcuInfo) < 1 and len(gwInfo) < 1:
+    if len(rcuInfo) < 1 and len(gwInfo) < 1 and len(serviceInfo) < 1:
         print "cant find device:", devName
         return 0
     elif len(rcuInfo) > 0:#rcu设备控制
@@ -175,6 +183,9 @@ def send_cmd(dictData):
             actionCode = 1
         paraDict = {"on": actionCode}
         protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=room['gw'])
+    elif len(serviceInfo) > 0:#海尔service控制
+        service = serviceInfo[0]
+        haier_proxy.control_service(service, dictData.get('actionCode'))
 
 
 if __name__ == "__main__":
