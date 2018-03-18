@@ -94,10 +94,10 @@ class StrategyMaker:
                 actIdx += 1
         print "scene json"
         print json.dumps(sJson)
-        # self.sJson = sJson
-        # return  sJson
-        self.sJson = ruleJson
-        return json.dumps(ruleJson)
+        self.sJson = sJson
+        return  sJson
+        #self.sJson = ruleJson
+        #return json.dumps(ruleJson)
 
     def send2gw(self):
         self.delStrategy(self.rid)
@@ -175,8 +175,8 @@ def setAllScene(roomNo):
     for s in sList:
         thread.start_new_thread(makeStrategyFun,(sMaker, s['name'], sleepTime))
         sleepTime += 2
-        # sMaker.makeStrategyJson(s['name'])
-        # sMaker.send2gw()
+        sMaker.makeStrategyJson(s['name'])
+        sMaker.send2gw()
 
 
     gMaker = GroupMaker(roomNo)
