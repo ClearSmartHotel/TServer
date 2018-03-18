@@ -238,6 +238,8 @@ def testFunc():
     onOff = 1 - onOff
     if onOff:
         sendControlDev(id="010000124b000e0c0395", ep=1, paraDict={"on": 1})
+    else:
+        sendControlDev(id="010000124b000e0c0395", ep=2, paraDict={"on": 1})
 """
         # scene.controlGroup("2507", constant.GROUP_ALL_LIGHT, {"on": 1})
         # sendControlDev(id="010000124b000e5369f6", ep=8, paraDict={"pt": 100})
