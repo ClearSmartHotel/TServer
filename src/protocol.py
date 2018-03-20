@@ -89,16 +89,19 @@ def send_status_mqtt(id, ep):
     }
     mqtt_client.publish_message(config.project_name + dev['roomNo'], json.dumps(statusJson))
 
-    # 控制RCUservices
-    if dev['controlType'] in {104, 105, 106} and dev['onoff'] in {0, 1}:
-        haier_proxy.control_room_services(dev['authToken'], dev['controlType'], dev['onoff'])
+    # 情景模式控制RCUservices
+    if dev['controlType'] in {104, 105, 106} and dev['onoff'] == 1:
+        serviceInfo = db.query("select * from SERVICE where authToken='%s' and serviceType='%d'" % (dev['authToken'], dev['controlType']))
+        if len(serviceInfo) > 0:
+            service = serviceInfo[0]
+            haier_proxy.control_service(service, 1)
         #请稍后104，请勿扰105，两个服务互斥处理，控制另一个面板关闭
-        if dev['onoff'] == 1 and dev['controlType'] in {104, 105}:
-            mutexType = 209 - dev['controlType']
-            serviceDev = db.query("select * from DEVICE where gw='%s' and controlType='%d' and onoff='1'" % (dev['gw'], mutexType))
-            if len(serviceDev) > 0:
-                d = serviceDev[0]
-                sendControlDev(d['id'], d['ep'], {"on" : 0}, d['gw'])
+        # if dev['onoff'] == 1 and dev['controlType'] in {104, 105}:
+        #     mutexType = 209 - dev['controlType']
+        #     serviceDev = db.query("select * from DEVICE where gw='%s' and controlType='%d' and onoff='1'" % (dev['gw'], mutexType))
+        #     if len(serviceDev) > 0:
+        #         d = serviceDev[0]
+        #         sendControlDev(d['id'], d['ep'], {"on" : 0}, d['gw'])
 
     #处理双控，判断设备controlType为201，主设备进行取反操作
     elif dev['controlType'] == 201 and dev['onoff'] in {1}:
@@ -237,9 +240,9 @@ def testFunc():
 
     onOff = 1 - onOff
     if onOff:
-        sendControlDev(id="010000124b000e0c0395", ep=1, paraDict={"on": 1})
+        sendControlDev(id="010000124b000e0bd0da", ep=1, paraDict={"on": 1})
     else:
-        sendControlDev(id="010000124b000e0c0395", ep=2, paraDict={"on": 1})
+        sendControlDev(id="010000124b000e0bd0da", ep=2, paraDict={"on": 1})
 """
         # scene.controlGroup("2507", constant.GROUP_ALL_LIGHT, {"on": 1})
         # sendControlDev(id="010000124b000e5369f6", ep=8, paraDict={"pt": 100})

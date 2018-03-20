@@ -79,13 +79,24 @@ class StrategyMaker:
                 obj.update(act)
                 sJson["cond"].append(obj)
                 condIdx += 1
-            else:                   #act 执行动作
+            elif dev.get("tigger") == 0:                   #act 执行动作
                 obj = {
                     "idx": actIdx,
                     "delay" : dev.get("delay",0),
                     "type" : 1,
                     "id" : dev["id"],
                     "ep" : dev["ep"]
+                }
+                print "act:" ,str(dev.get("act"))
+                act = json.loads(dev.get("act"))
+                obj.update(act)
+                sJson["act"].append(obj)
+                actIdx += 1
+            elif dev.get("tigger") == 2: #分组策略
+                obj = {
+                    "idx": actIdx,
+                    "delay" : dev.get("delay",0),
+                    "type" : 2
                 }
                 print "act:" ,str(dev.get("act"))
                 act = json.loads(dev.get("act"))
@@ -113,6 +124,10 @@ class GroupMaker:
         self.room_type = rInfo["room_type"]
         self.gw_mac = rInfo["gw"]
         pass
+
+    def getSupportGroupList(self):
+        sList = db.select("GROUP_INFO",where={'room_type':self.room_type},what = "gid,group_name")
+        return  list(sList)
 
     def getInfo(self,name):
         gInfo = db.select("GROUP_INFO", where={"group_name": name}).first()
@@ -175,13 +190,7 @@ def setAllScene(roomNo):
     for s in sList:
         thread.start_new_thread(makeStrategyFun,(sMaker, s['name'], sleepTime))
         sleepTime += 2
-        sMaker.makeStrategyJson(s['name'])
-        sMaker.send2gw()
 
-
-    gMaker = GroupMaker(roomNo)
-    gMaker.makeJson("all_light")
-    gMaker.send2gw()
 
 def makeStrategyFun(sMaker, name, sleepTime):
     time.sleep(sleepTime)
@@ -193,7 +202,23 @@ def setSingleScene(roomNo, stragegy):
     sMaker.makeStrategyJson(stragegy)
     sMaker.send2gw()
 
+def setGroupThreadFun(gMaker, group_name, sleepTime):
+    time.sleep(sleepTime)
+    gMaker.makeJson(group_name)
+    gMaker.send2gw()
+
+def setAllGroup(roomNo):
+    gMaker = GroupMaker(roomNo)
+    gList = gMaker.getSupportGroupList()
+    sleepTime = 1
+    for g in gList:
+        thread.start_new_thread(setGroupThreadFun,(gMaker, g['group_name'], sleepTime))
+        sleepTime+=2
+
 def setGroup(roomNo, groupName):
+    if groupName == 'All':
+        setAllGroup(roomNo)
+        return 0
     gMaker = GroupMaker(roomNo)
     gMaker.makeJson(groupName)
     gMaker.send2gw()
@@ -210,7 +235,7 @@ ruleJson = {
 		"idx": 1,
 		"cmd": "on",
 		"type": 2,
-		"id": "010000124b000e0c0395",
+		"id": "010000124b000e0bd0da",
 		"ep": 1
 	}],
 	"name": "明亮模式",
@@ -220,7 +245,7 @@ ruleJson = {
 		"val": 1,
 		"idx": 1,
 		"cmd": "on",
-		"type": 3,
+		"type": 2,
 		"gid": 1
 	}],
 	"serial": 346,

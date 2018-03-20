@@ -137,7 +137,8 @@ def dev_status_notify(data):
             get_room_devices(token)
             get_room_services(token)
             thread.start_new_thread(welcomeStrategy,(room, 3))
-            thread.start_new_thread(welcomeStrategy, (room, 4))
+            thread.start_new_thread(welcomeStrategy, (room, 5))
+            thread.start_new_thread(welcomeStrategy, (room, 7))
         elif devStatus['cardStatus'] == 0:
             thread.start_new_thread(goodbyeStrategy, (room, 9))
             thread.start_new_thread(goodbyeStrategy, (room, 10))
@@ -200,6 +201,10 @@ def welcomeStrategy(room, interval):
     curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
     for dev in curtainInfo:
         protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
+    #打开电视
+    tvInfo = db.select('DEVICE', where={'devName': '电视', 'gw': room['gw']})
+    for dev in tvInfo:
+        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
     thread.exit_thread()
 
 #送宾模式，关掉所有窗
@@ -246,8 +251,6 @@ def updateService(data):
             s['authToken'] = authToken
             s['devName'] = constant.HAIER_SERVICE_DEVNAME_DICT[s['serviceType']]
             db_replace("SERVICE", {"serviceType": s["serviceType"],
-                                   "serviceStatus": s["serviceStatus"],
-                                   "serviceToken": s["serviceToken"],
                                    "serviceNameChs": s["serviceNameChs"],
                                    "authToken": s['authToken']}, s)
 

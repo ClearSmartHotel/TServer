@@ -77,7 +77,7 @@ def handle_message(topic, data):
             set_scene(cmdDict)
         elif cmd == "setGroup":
             print "setScene"
-            scene.setGroup(cmdDict['roomNo'],cmdDict['groupName'])
+            scene.setGroup(cmdDict['roomNo'],cmdDict.get('groupName', None))
     except Exception as e:
         print e.message
 
