@@ -19,6 +19,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+ws_heartbeat_flag = False
 
 class haier_rcu_websocket(threading.Thread):
     def __init__(self):
@@ -41,11 +42,22 @@ def on_error(ws, error):
     print error
 
 def on_close(ws):
-    print "---close---"
+    print "haier websocket close"
     #todo 异常处理重新连接
+    global ws_heartbeat_flag
+    ws_heartbeat_flag = False
+    thread.start_new_thread(reconnect(10))
+
+def reconnect(sleepTime):
+    time.sleep(sleepTime)
+    print "haier websocket reconnect thread"
+    rcu_ws = haier_rcu_websocket()
+    rcu_ws.start()
 
 def on_open(ws):
     print "on open"
+    global ws_heartbeat_flag
+    ws_heartbeat_flag = True
     #心跳注册监听整个项目所有设备状态变化
     def heartbeat_thread():
         send_rcu_cmd(get_room_auth_cmd())
@@ -55,7 +67,7 @@ def on_open(ws):
                 "projectTokens":["%s"]
             }
             ''' % (config.haier_rcu_project_autoken)
-        while True:
+        while ws_heartbeat_flag:
             ws.send(cmdJson)
             time.sleep(60)
 
@@ -146,6 +158,9 @@ def dev_status_notify(data):
 
 
 def send_rcu_cmd(cmd):
+    if ws_heartbeat_flag == False:
+        print "websocket connect lost"
+        return 0
     url = "https://" + config.haier_rcu_host + ":40443/puietelRcuApi"
     header = {'Content-Type': 'application/json'}
     r = requests.post(url, cmd, verify=False, headers=header, timeout=2)

@@ -217,5 +217,5 @@ GET
 ```
 projectName:tzgjhotel//项目名
 roomNo：A101//房间号
-groupName:all_light//灯光分组，起夜
+groupName:all_light//灯光分组，起夜;All设备所有分组信息
 ```
