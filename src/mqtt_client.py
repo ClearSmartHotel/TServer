@@ -90,6 +90,8 @@ def crontrolScene(dictData):
             scene.controlGroup(roomNo, constant.GROUP_ALL_LIGHT, {"on":1})
         elif sceneName == '灯光全关':
             scene.controlGroup(roomNo, constant.GROUP_ALL_LIGHT, {"on":0})
+        dictData['devName'] = sceneName
+        publish_dev_status(dictData)
 
 def set_scene(dictData):
     roomNo = dictData['roomNo']

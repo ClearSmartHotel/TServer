@@ -146,16 +146,19 @@ def dev_status_notify(data):
     #插卡取电
     if statusJson['devType'] == 2 and devStatus is not None:
         if devStatus['cardStatus'] == 1:
+            open_window(room)
+            thread.start_new_thread(welcomeStrategy,(room, 2))
             get_room_devices(token)
             get_room_services(token)
-            thread.start_new_thread(welcomeStrategy,(room, 3))
-            thread.start_new_thread(welcomeStrategy, (room, 5))
-            thread.start_new_thread(welcomeStrategy, (room, 7))
         elif devStatus['cardStatus'] == 0:
             thread.start_new_thread(goodbyeStrategy, (room, 9))
-            thread.start_new_thread(goodbyeStrategy, (room, 10))
+            thread.start_new_thread(goodbyeStrategy, (room, 13))
 
-
+def open_window(room):
+        # 打开所有窗
+        curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
+        for dev in curtainInfo:
+            protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
 
 def send_rcu_cmd(cmd):
     if ws_heartbeat_flag == False:
@@ -211,15 +214,24 @@ def welcomeStrategy(room, interval):
         print "cardStatus:", cStatus
         if cStatus['cardStatus'] == 0:
             thread.exit()
+    print "open all light"
     scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on":1})
-    #打开所有窗
-    curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
-    for dev in curtainInfo:
-        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
-    #打开电视
-    tvInfo = db.select('DEVICE', where={'devName': '电视', 'gw': room['gw']})
-    for dev in tvInfo:
+    time.sleep(1)
+    print "open window"
+    open_window(room)
+    time.sleep(1)
+    lightInfo = db.select('DEVICE', where={'devName': '廊灯', 'gw': room['gw']})
+    for dev in lightInfo:
         protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
+    time.sleep(3)
+    print "open all light again"
+    scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on": 1})
+
+
+    #打开电视
+    # tvInfo = db.select('DEVICE', where={'devName': '电视', 'gw': room['gw']})
+    # for dev in tvInfo:
+    #     protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
     thread.exit_thread()
 
 #送宾模式，关掉所有窗

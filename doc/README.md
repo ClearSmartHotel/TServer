@@ -85,6 +85,13 @@ POST 所有指令通过mqtt订阅项目名+房间号返回
 "sceneName":"灯光全关"//情景名称
 }
 ```
+- 返回
+```JSON
+{
+    "wxCmd":"devStatus",
+    "devName": "灯光全关"
+}
+```
 
 - 2、控制设备开关
 ```
