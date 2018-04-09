@@ -8,3 +8,6 @@ HAIER_SERVICE_DEVNAME_DICT = {
     105:"请勿扰",
     106:"请稍候"
 }
+
+BAD_REQUEST_RES_JSON={'rescode':'400', 'errInfo':'Bad Request'}
+OK_RES_JSON={'rescode':'200', 'errInfo':'None'}

@@ -155,10 +155,10 @@ def dev_status_notify(data):
             thread.start_new_thread(goodbyeStrategy, (room, 13))
 
 def open_window(room):
-        # 打开所有窗
-        curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
-        for dev in curtainInfo:
-            protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
+    # 打开所有窗
+    curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
+    for dev in curtainInfo:
+        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
 
 def send_rcu_cmd(cmd):
     if ws_heartbeat_flag == False:

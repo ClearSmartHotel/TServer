@@ -92,6 +92,7 @@ def crontrolScene(dictData):
             scene.controlGroup(roomNo, constant.GROUP_ALL_LIGHT, {"on":0})
         dictData['devName'] = sceneName
         publish_dev_status(dictData)
+    return json.dumps(constant.OK_RES_JSON)
 
 def set_scene(dictData):
     roomNo = dictData['roomNo']
@@ -141,7 +142,7 @@ def send_cmd(dictData):
     devName = dictData.get('devName', None)
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (dictData['roomNo']))
     if devName is None or len(roomInfo) < 1:
-        return 0
+        return json.dumps(constant.BAD_REQUEST_RES_JSON)
     room = roomInfo[0]
     rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s' and authToken='%s'"%(devName, room['authToken']))
     gwInfo = db.query("select * from DEVICE where devName='%s'and gw='%s'" % (devName, room['gw']))
@@ -149,7 +150,7 @@ def send_cmd(dictData):
     devStatus = dictData.get('devStatus', None)
     if len(rcuInfo) < 1 and len(gwInfo) < 1 and len(serviceInfo) < 1:
         print "cant find device:", devName
-        return 0
+        return json.dumps(constant.BAD_REQUEST_RES_JSON)
     elif len(rcuInfo) > 0:#rcu设备控制
         print "rcu control"
         dev = rcuInfo[0]
@@ -177,7 +178,7 @@ def send_cmd(dictData):
         #先判断 是不是网关电机
         if dev['did'] == constant.SZ_CURTAIN_DID:
             protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": actionCode}, gw_mac=room['gw'])
-            return 0
+            return json.dumps(constant.BAD_REQUEST_RES_JSON)
         #开关面板如果actionCode是2，取反操作
         if actionCode == 2 and dev['onoff'] in {0, 1}:
             actionCode = 1 - dev['onoff']
@@ -188,6 +189,7 @@ def send_cmd(dictData):
     elif len(serviceInfo) > 0:#海尔service控制
         service = serviceInfo[0]
         haier_proxy.control_service(service, dictData.get('actionCode'))
+    return json.dumps(constant.OK_RES_JSON)
 
 
 if __name__ == "__main__":
