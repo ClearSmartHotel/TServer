@@ -147,7 +147,7 @@ def dev_status_notify(data):
     if statusJson['devType'] == 2 and devStatus is not None:
         if devStatus['cardStatus'] == 1:
             open_window(room)
-            thread.start_new_thread(welcomeStrategy,(room, 2))
+            thread.start_new_thread(welcomeStrategy,(room, 1))
             get_room_devices(token)
             get_room_services(token)
         elif devStatus['cardStatus'] == 0:
@@ -207,7 +207,7 @@ def get_room_devices(authToken):
 #迎宾模式，延时3秒打开所有灯
 def welcomeStrategy(room, interval):
     print "welcomeStrategy:",room['roomNo']
-    time.sleep(interval)
+    time.sleep(2)
     cardInfo = db.select('HAIER_DEVICE', where={'devType': constant.HAIER_CARD_TYPE, 'authToken': room['authToken']})
     for card in cardInfo:
         cStatus = json.loads(card['devStatus'])
@@ -217,13 +217,18 @@ def welcomeStrategy(room, interval):
     print "open all light"
     scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on":1})
     time.sleep(1)
-    print "open window"
     open_window(room)
     time.sleep(1)
-    lightInfo = db.select('DEVICE', where={'devName': '廊灯', 'gw': room['gw']})
+    print "open window"
+    scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on": 1})
+    # lightInfo = db.select('DEVICE', where={'devName': '背景灯', 'gw': room['gw']})
+    lightInfo = db.query("SELECT * FROM DEVICE WHERE devName LIKE '%灯%';")
     for dev in lightInfo:
         protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
     time.sleep(3)
+    lightInfo = db.select('DEVICE', where={'devName': '廊灯', 'gw': room['gw']})
+    for dev in lightInfo:
+        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
     print "open all light again"
     scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on": 1})
 

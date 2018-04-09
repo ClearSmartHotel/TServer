@@ -20,3 +20,5 @@ haier_rcu_host = _config.get('HaierRcu', 'host')
 haier_rcu_project_autoken = _config.get('HaierRcu', 'projectToken')
 
 project_name = _config.get('project', 'name')
+
+ws_port = _config.getint('websocket', 'port')
