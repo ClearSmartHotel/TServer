@@ -1,70 +1,315 @@
-# **上海清鹤智慧酒店客房控制系统第三方设备对接接口**
+# **上海清鹤智慧酒店客房控制系统第三方设备对接WebSocket接口**
 
 [TOC]
 
 - - -
-#####  一、MQTT服务获取消息推送
+#####  一、服务地址
 
 - 服务器
 ```
-服务器：iotd.cleartv.cn
-端口：1883
+服务地址：ws://iotd.cleartv.cn:9999
+测试服务器：iotd.cleartv.cn
+端口：9999
+所有数据传输采用json格式
 ```
-
-- 设备状态更新以及设备列表通过mqtt返回
-```
-设备唯一标识：项目名+房间号（tzgjhotel2507）
-```
-
 
 - - -
-#####  二、获取token
-
-- 接口地址
-http://iotdtest.cleartv.cn/iotd_backend/getRoomToken
+#####  一、保持一分钟一次心跳消息
 
 - 方法
-GET
+heartbeat
 
 - 参数
 ```JSON
-房间号：roomNo//2507
-项目名: projectName//tzgjhotel
+{
+    "wsCmd": "heartbeat"
+}
 ```
-
 - 返回内容
 ```JSON
 {
-    "wxAuthToken": "a4qns7akkb3o58o8bqf020180130172156",
-    "wxQrcode": "a4qns7akkb3o58o8bqf020180130172156",
+    "wsCmd": "getGowildList",
+    "gowildId": "a4qns7akkb3o58o8bqf020180130172156",
     "rescode": "200",
     "errInfo": "None",
 }
 ```
 
 - - -
-##### 三、重置token
-
-- 接口地址
-http://iotdtest.cleartv.cn/iotd_backend/updateRoomWxToken
+#####  二、绑定接口
 
 - 方法
-POST
+getGowildList,根据gowildId获取房间号
 
 - 参数
 ```JSON
 {
-    "roomNo":"2507",//房间号
-    "projectName":"tzgjhotel"//项目名
+    "wsCmd": "getGowildList",
+    "gowildId": "abcdefg"#不传这个参数，会返回所有房间列表
+}
+```
+
+- 返回内容
+```JSON
+{"wsCmd": "getGowildList",
+ "gowildList": 
+     [
+         {"gowildId": "abcdefg", "roomNo": "2507"}, 
+         {"gowildId": "112233", "roomNo": "A101"}
+     ], 
+ "rescode": "200", 
+ "errInfo": "None", 
+ "cmdMessage": {"wsCmd": "getGowildList"}}
+
+```
+
+- - -
+##### 三、获取场景列表
+
+- 方法
+```JSON
+{
+    "wsCmd": "getSceneList",
+    "roomNo": "2507"
+}
+```
+
+- 返回内容
+```JSON
+{"sceneList": 
+[
+"明亮模式", 
+"睡眠模式", 
+"起夜模式", 
+"影音模式", 
+"灯光全开", 
+"灯光全关", 
+"打开窗帘", 
+"关闭窗帘"], 
+"wsCmd": "getSceneList", 
+"rescode": "200", 
+"cmdMessage": {"wsCmd": "getSceneList", "roomNo": "2507"}}
+```
+- 出错返回
+```JSON
+{"wsCmd": "getSceneList", 
+"rescode": "400", 
+"errInfo": "no such roomNo", 
+"cmdMessage": {"wsCmd": "getSceneList", "roomNo": "207"}}
+```
+
+- - -
+##### 三、控制场景
+
+- 方法
+```JSON
+{
+    "wsCmd": "controlScene",
+    "sceneName": "明亮模式",
+    "roomNo": "2507"
 }
 ```
 
 - 返回内容
 ```JSON
 {
-    "rescode": "200",
-    "errInfo": "None",
+"wsCmd": "controlScene", 
+"rescode": "200", 
+"errInfo": "None", 
+"cmdMessage": {"sceneName": "明亮模式", "wsCmd": "controlScene", "roomNo": "2507"}}
+```
+- 出错返回
+```JSON
+{"wsCmd": "controlScene", 
+"rescode": "400", 
+"errInfo": "parameter error ,no devName or on such roomNo", 
+"cmdMessage": {"sceneName": "明亮模式", "wsCmd": "controlScene", "roomNo": "507"}} 
+```
+
+- - -
+##### 三、获取设备列表
+
+- 方法
+```JSON
+{
+    "wsCmd": "getDevList",
+    "roomNo": "2507"
 }
+```
+
+- 返回内容
+```JSON
+{
+	"devList": [{
+		"devStatus": null,
+		"devName": "电视机",
+		"actionCode": 2,
+		"onLine": 1
+	}, {
+		"devStatus": null,
+		"devName": "红外感应",
+		"actionCode": 2,
+		"onLine": 1
+	}, {
+		"devStatus": null,
+		"devName": "红外感应",
+		"actionCode": 1,
+		"onLine": 1
+	}, {
+		"devName": "门锁",
+		"actionCode": 0,
+		"onLine": 0
+	}, {
+		"devStatus": {
+			"cardStatus": 1,
+			"statusInfo": "插卡"
+		},
+		"devName": "插卡取电",
+		"actionCode": 1,
+		"onLine": 1
+	}, {
+		"devStatus": {
+			"switch": 1,
+			"speed": 2,
+			"mode": 1,
+			"currentTemp": 16,
+			"setTemp": 26
+		},
+		"devName": "空调",
+		"actionCode": 1,
+		"onLine": 1
+	}, {
+		"devStatus": null,
+		"devName": "背景音乐",
+		"actionCode": 2,
+		"onLine": 1
+	}, {
+		"devName": "廊灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "背景灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "镜前灯副",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "卫灯副",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "镜前灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "卫灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "请退房",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "明亮模式",
+		"actionCode": 1,
+		"onLine": 1
+	}, {
+		"devName": "睡眠模式",
+		"actionCode": 1,
+		"onLine": 1
+	}, {
+		"devName": "起夜模式",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "影音模式",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "窗帘面板",
+		"actionCode": null,
+		"onLine": 1
+	}, {
+		"devName": "左夜灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "左阅读灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "背景灯带",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "右夜灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "右阅读灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "背景灯带副",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "吧台灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "纱帘",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "布帘",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "电视",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "天花灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "书桌灯",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devName": "插座",
+		"actionCode": null,
+		"onLine": 0
+	}, {
+		"devName": "请勿扰",
+		"actionCode": 1,
+		"onLine": 1
+	}, {
+		"devName": "请稍候",
+		"actionCode": 1,
+		"onLine": 1
+	}, {
+		"devName": "请打扫",
+		"actionCode": 0,
+		"onLine": 1
+	}],
+	"wsCmd": "getDevList",
+	"rescode": "200",
+	"cmdMessage": {
+		"wsCmd": "getDevList",
+		"roomNo": "2507"
+	}
+}
+```
+- 出错返回
+```JSON
+{"wsCmd": "controlScene", 
+"rescode": "400", 
+"errInfo": "parameter error ,no devName or on such roomNo", 
+"cmdMessage": {"sceneName": "明亮模式", "wsCmd": "controlScene", "roomNo": "507"}} 
 ```
 
 - - -

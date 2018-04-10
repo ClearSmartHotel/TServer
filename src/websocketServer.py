@@ -8,6 +8,8 @@ import constant
 from common.DBBase import db
 import mqtt_client
 import protocol
+import datetime
+import copy
 
 class wsServer(threading.Thread):
     def __init__(self):
@@ -23,7 +25,7 @@ class wsServer(threading.Thread):
     def send_message_to_all(self, msg):
         self.server.send_message_to_all(msg)
 
-websocket_server = wsServer()
+
 
 def send_message_to_all(msg):
     websocket_server.send_message_to_all(msg)
@@ -43,13 +45,11 @@ def message_received(client, server, message):
         roomNo = messageJson.get('roomNo', None)
         wsCmd = messageJson.get('wsCmd', None)
         print "roomNo:", roomNo
-        if roomNo is not None:
-            print "roomNo:", roomNo
         roomInfo = db.query("select * from ROOM where roomNo='%s'" % (roomNo))
-        resJson = constant.BAD_REQUEST_RES_JSON
-        if len(roomInfo) < 1:
-            resJson['errInfo'] = 'no such roomNo:%s'%(roomNo)
-        elif wsCmd == 'getDevList':#获取设备列表
+        resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
+        # if len(roomInfo) < 1 and wsCmd is None:
+        #     resJson['errInfo'] = 'no such roomNo:%s'%(roomNo)
+        if wsCmd == 'getDevList':#获取设备列表
             resJson = getDevList(roomNo)
         elif wsCmd == 'getSceneList':#获取场景列表
             resJson = getSceneList(roomNo)
@@ -59,16 +59,20 @@ def message_received(client, server, message):
             resJson = controlDevice(messageJson)
         elif wsCmd == 'getGowildList':#猎取狗尾草设备和房间对应列表
             resJson = getGowildList(messageJson)
+        elif wsCmd == 'heartbeat':  # 心跳连接
+            resJson = copy.deepcopy(constant.OK_RES_JSON)
+            resJson['heartSuccessTime'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         else:
             resJson['errInfo'] = 'unknow command'
         resJson['wsCmd'] = wsCmd
         resJson['cmdMessage'] = messageJson
-        server.send_message(client, json.dumps(resJson))
+        print "websocket server send message %s to client %d:"%(json.dumps(resJson),client['id'])
+        server.send_message(client,  json.dumps(resJson))
     except Exception as e:
         print "invalid message",str(e)
-        resJson = constant.BAD_REQUEST_RES_JSON
+        resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
         resJson['errInfo'] = 'invalid message' + str(e)
-        resJson['cmdMessage'] = messageJson
+        resJson['cmdMessage'] = message
         server.send_message(client, json.dumps(resJson))
 
 def getGowildList(messageJson):
@@ -76,13 +80,13 @@ def getGowildList(messageJson):
     if gowildId is None:
         roomInfo = db.query("select roomNo,gowildId from ROOM")
     else:
-        roomInfo = db.query("select roomNo,gowildId from ROOM='%s'"%(gowildId))
+        roomInfo = db.query("select roomNo,gowildId from ROOM where gowildId='%s'"%(gowildId))
     if len(roomInfo) < 1:
-        resJson = constant.BAD_REQUEST_RES_JSON
+        resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
         resJson['errInfo'] = 'no such gowildId'
         resJson['gowildId'] = gowildId
         return resJson
-    resJson = constant.OK_RES_JSON
+    resJson = copy.deepcopy(constant.OK_RES_JSON)
     resJson['gowildList'] = []
     for r in roomInfo:
         rJson = {'roomNo':r['roomNo'],
@@ -95,13 +99,16 @@ def controlDevice(messageJson):
 
 def controlScene(messageJson):
     sceneName = messageJson.get("sceneName", None)
-    resJson = constant.BAD_REQUEST_RES_JSON
+    resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
     if sceneName is None:
         resJson['errInfo'] = 'parameter error ,no sceneName'
         return resJson
-    if sceneName in {"明亮模式", "睡眠模式", "起夜模式", "影音模式"}:
-        messageJson['devName'] = sceneName
-        return controlDevice(messageJson)
+    print "scnenName:",sceneName
+    if "模式" in sceneName:
+        print "4 scene"
+        dictJson = copy.deepcopy(messageJson)
+        dictJson['devName'] = sceneName
+        return controlDevice(dictJson)
     elif sceneName in {"灯光全开", "灯光全关"}:
         return mqtt_client.crontrolScene(messageJson)
     elif sceneName == '打开窗帘':
@@ -122,12 +129,14 @@ def controlScene(messageJson):
         curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
         for dev in curtainInfo:
             protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 0}, gw_mac=room['gw'])
-    return constant.OK_RES_JSON
+    return copy.deepcopy(constant.OK_RES_JSON)
 
 def getSceneList(roomNo):
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (roomNo))
+    resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
     if len(roomInfo) < 1:
-        return json.dumps(constant.BAD_REQUEST_RES_JSON)
+        resJson['errInfo'] = 'no such roomNo'
+        return resJson
     sceneJson = {"rescode": "200",
                  "sceneList": []}
     sceneJson['sceneList'].append("灯光全开")
@@ -138,12 +147,13 @@ def getSceneList(roomNo):
     sceneJson['sceneList'].append("影音模式")
     sceneJson['sceneList'].append("打开窗帘")
     sceneJson['sceneList'].append("关闭窗帘")
+    return sceneJson
 
 def getDevList(roomNo):
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (roomNo))
     if len(roomInfo) < 1:
         print "房间不存在"
-        return json.dumps(constant.BAD_REQUEST_RES_JSON)
+        return copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
     room = roomInfo[0]
     rcuInfo = db.query("select * from HAIER_DEVICE where authToken='%s'" % (room['authToken']))
     gwInfo = db.query("select * from DEVICE where gw='%s' and controlType=1" % (room['gw']))
@@ -171,6 +181,8 @@ def getDevList(roomNo):
         devListJson['devList'].append(devJson)
 
     return devListJson
+
+websocket_server = wsServer()
 
 if __name__ == "__main__":
     websocket_server.start()

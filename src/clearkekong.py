@@ -8,7 +8,7 @@ import haier_proxy
 import mqtt_client
 from protocol import testFunc
 from shunzhou_proxy import ShunzhouProxyFactory, reactor, TCP4ServerEndpoint
-from websocketServer import wsServer
+import websocketServer
 
 
 #测试用定时器线程，
@@ -33,7 +33,7 @@ m = mqtt_client.mqtt_task()
 m.start()
 
 #启动websocketserver
-wsServer.websocket_server.start()
+websocketServer.websocket_server.start()
 
 endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())

@@ -11,6 +11,7 @@ from common import config
 from common.DBBase import db
 from scene import maker as scene
 import constant
+import copy
 
 mqttclient = mqtt.Client()
 
@@ -92,7 +93,7 @@ def crontrolScene(dictData):
             scene.controlGroup(roomNo, constant.GROUP_ALL_LIGHT, {"on":0})
         dictData['devName'] = sceneName
         publish_dev_status(dictData)
-    return constant.OK_RES_JSON
+    return copy.deepcopy(constant.OK_RES_JSON)
 
 def set_scene(dictData):
     roomNo = dictData['roomNo']
@@ -141,8 +142,9 @@ def get_dev_list(dictData):
 def send_cmd(dictData):
     devName = dictData.get('devName', None)
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (dictData['roomNo']))
-    resJson = constant.BAD_REQUEST_RES_JSON
+    resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
     if devName is None or len(roomInfo) < 1:
+        print "no devName or on such roomNo"
         resJson['errInfo'] = 'parameter error ,no devName or on such roomNo'
         return resJson
     room = roomInfo[0]
@@ -181,7 +183,7 @@ def send_cmd(dictData):
         #先判断 是不是网关电机
         if dev['did'] == constant.SZ_CURTAIN_DID:
             protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": actionCode}, gw_mac=room['gw'])
-            return constant.OK_RES_JSON
+            return copy.deepcopy(constant.OK_RES_JSON)
         #开关面板如果actionCode是2，取反操作
         if actionCode == 2 and dev['onoff'] in {0, 1}:
             actionCode = 1 - dev['onoff']
@@ -192,7 +194,7 @@ def send_cmd(dictData):
     elif len(serviceInfo) > 0:#海尔service控制
         service = serviceInfo[0]
         haier_proxy.control_service(service, dictData.get('actionCode'))
-    return constant.OK_RES_JSON
+    return copy.deepcopy(constant.OK_RES_JSON)
 
 
 if __name__ == "__main__":
