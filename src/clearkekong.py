@@ -33,8 +33,7 @@ m = mqtt_client.mqtt_task()
 m.start()
 
 #启动websocketserver
-websocket_server = wsServer()
-websocket_server.start()
+wsServer.websocket_server.start()
 
 endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())

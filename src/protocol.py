@@ -10,6 +10,7 @@ from common import config
 from common.DBBase import db, db_replace
 import constant
 import scene.maker as scene
+import websocketServer
 
 serial = 0  #发送消息的序列号
 
@@ -88,6 +89,9 @@ def send_status_mqtt(id, ep):
         "actionCode": dev['onoff']
     }
     mqtt_client.publish_message(config.project_name + dev['roomNo'], json.dumps(statusJson))
+    statusJson['wsCmd'] = statusJson.pop('wxCmd')
+    statusJson['roomNo'] = dev['roomNo']
+    websocketServer.send_message_to_all(json.dumps(statusJson))
 
     # 情景模式控制RCUservices
     if dev['controlType'] in {104, 105, 106} and dev['onoff'] == 1:

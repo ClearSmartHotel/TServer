@@ -16,6 +16,7 @@ import protocol
 import constant
 import thread
 import sys
+import websocketServer
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -142,6 +143,11 @@ def dev_status_notify(data):
         if devStatus is not None:
             mqttJson['devStatus'] = devStatus
         mqtt_client.publish_message(config.project_name + room['roomNo'], json.dumps(mqttJson))
+
+        # 将状态变动发给websocket
+        statusJson['wsCmd'] = statusJson.pop('wxCmd')
+        statusJson['roomNo'] = room['roomNo']
+        websocketServer.send_message_to_all(json.dumps(statusJson))
 
     #插卡取电
     if statusJson['devType'] == 2 and devStatus is not None:
