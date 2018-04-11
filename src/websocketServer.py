@@ -25,9 +25,8 @@ class wsServer(threading.Thread):
     def send_message_to_all(self, msg):
         self.server.send_message_to_all(msg)
 
-
-
 def send_message_to_all(msg):
+    print "websocket server send message to all:",msg
     websocket_server.send_message_to_all(msg)
 
 def new_client(client, server):

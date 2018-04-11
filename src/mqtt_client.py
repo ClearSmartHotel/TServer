@@ -154,7 +154,7 @@ def send_cmd(dictData):
     devStatus = dictData.get('devStatus', None)
     if len(rcuInfo) < 1 and len(gwInfo) < 1 and len(serviceInfo) < 1:
         print "cant find device:", devName
-        resJson['errInfo'] = "cant find device:'%'"%(devName)
+        resJson['errInfo'] = "cant find device:'%s'"%(devName)
         return resJson
     elif len(rcuInfo) > 0:#rcu设备控制
         print "rcu control"

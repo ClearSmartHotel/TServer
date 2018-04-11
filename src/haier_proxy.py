@@ -145,9 +145,9 @@ def dev_status_notify(data):
         mqtt_client.publish_message(config.project_name + room['roomNo'], json.dumps(mqttJson))
 
         # 将状态变动发给websocket
-        statusJson['wsCmd'] = statusJson.pop('wxCmd')
-        statusJson['roomNo'] = room['roomNo']
-        websocketServer.send_message_to_all(json.dumps(statusJson))
+        mqttJson['wsCmd'] = mqttJson.pop('wxCmd')
+        mqttJson['roomNo'] = room['roomNo']
+        websocketServer.send_message_to_all(json.dumps(mqttJson))
 
     #插卡取电
     if statusJson['devType'] == 2 and devStatus is not None:
