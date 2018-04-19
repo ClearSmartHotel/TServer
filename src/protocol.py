@@ -51,27 +51,41 @@ def dataPrase(clinet_msg ,json_obj):
         return
 
 def revDevInfo(device,gw_mac = None):
+
     devInfo = {
         "id": device.get("id"),
         "ol": device.get("ol"),
         "ep": device.get("ep"),
         "pid": device.get("pid", None),
         "did": device.get("did", None),
+        "st" : json.dumps(device.get("st", {})),
         "onoff": device.get("st", {}).get("on", None),
-        "coolset": device.get("st", {}).get("coolset", None),
-        "heartset": device.get("st", {}).get("heartset", None),
-        "thermode": device.get("st", {}).get("thermode", None),
-        "pt": device.get("st", {}).get("pt", None),
-        "wtype": device.get("st", {}).get("wtype", None),
         "time_last": time.time()
     }
     if gw_mac is not None:
         devInfo.update({"gw" : gw_mac})
     if device.get("did") == constant.SZ_CURTAIN_DID:
         devInfo['onoff'] = device.get("st", {}).get("pt", None)
+    elif device.get("did") == constant.SZ_MENCI_DID:
+        zsta = device.get("st", {}).get("zsta", None)
+        if zsta is None: #光感照明
+            return 0
+        devInfo['onoff'] = zsta - 4
 
+    ret = db.select("DEVICE", where={"id": devInfo["id"], "ep": devInfo["ep"]}).first()
+    st = ret.get("st", None)
+    if ret is None:
+        db.insert("DEVICE", **devInfo)
+    else:
+        if st is not None:
+            stJson = json.loads(ret['st'])
+            for k,v in device.get("st", {}).items():
+                stJson[k] = v
+            print "stJson:",stJson
+            devInfo['st'] = json.dumps(stJson)
+        db.update("DEVICE", where={"id": devInfo["id"], "ep": devInfo["ep"]}, **devInfo)
 
-    db_replace("DEVICE", {"id": devInfo["id"], "ep": devInfo["ep"]}, devInfo)
+    # db_replace("DEVICE", {"id": devInfo["id"], "ep": devInfo["ep"]}, devInfo)
 
 #面板开关事件处理
 def send_status_mqtt(id, ep):
@@ -86,7 +100,8 @@ def send_status_mqtt(id, ep):
         "wxCmd":"devStatus",
         "devName": dev['devName'],
         "onLine": dev['ol'],
-        "actionCode": dev['onoff']
+        "actionCode": dev['onoff'],
+        "devId": dev['id'] + str(dev['ep'])
     }
     mqtt_client.publish_message(config.project_name + dev['roomNo'], json.dumps(statusJson))
     statusJson['wsCmd'] = statusJson.pop('wxCmd')
@@ -244,9 +259,9 @@ def testFunc():
 
     onOff = 1 - onOff
     if onOff:
-        sendControlDev(id="010000124b000e0bd0da", ep=1, paraDict={"on": 1})
+        sendControlDev(id="010000124b000c333228", ep=1, paraDict={"inct": 1})
     else:
-        sendControlDev(id="010000124b000e0bd0da", ep=2, paraDict={"on": 1})
+        sendControlDev(id="010000124b000c333228", ep=1, paraDict={"inct": 2})
 """
         # scene.controlGroup("2507", constant.GROUP_ALL_LIGHT, {"on": 1})
         # sendControlDev(id="010000124b000e5369f6", ep=8, paraDict={"pt": 100})

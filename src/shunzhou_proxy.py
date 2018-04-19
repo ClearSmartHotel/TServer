@@ -51,9 +51,10 @@ class ShunzhouProxyProtocol(Protocol):
         self.factory = factory
 
     def connectionMade(self):
-        print "new connection come"
+        print "shunzhou new connection come"
         self.transport.shunzhou_proxy = ShunzhouProxy(self ,self.factory, self.transport)
         self.factory.addClient(self)
+        print "shunzhou clients num:" + str(len(self.factory.clients))
 
     def connectionLost(self, reason):
         print "connection lost: " + reason.getErrorMessage()

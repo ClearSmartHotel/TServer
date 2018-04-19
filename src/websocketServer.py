@@ -10,6 +10,9 @@ import mqtt_client
 import protocol
 import datetime
 import copy
+import os
+import re
+import haier_proxy
 
 class wsServer(threading.Thread):
     def __init__(self):
@@ -32,7 +35,8 @@ def send_message_to_all(msg):
 def new_client(client, server):
     print("New client connected and was given id %d" %(client['id']))
     server.send_message_to_all("new client has joined us")
-    server.send_message(client,"only you")
+    id = os.getpid()
+    server.send_message(client,"your id :"+str(id))
 
 def client_left(client, server):
     print("client %d disconnected" %(client['id']))
@@ -94,7 +98,56 @@ def getGowildList(messageJson):
     return resJson
 
 def controlDevice(messageJson):
-    return mqtt_client.send_cmd(messageJson)
+    resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
+    devType = messageJson.get('devType', None)
+    roomInfo = db.query("select * from ROOM where roomNo='%s'" % (messageJson['roomNo']))
+    if devType is None or len(roomInfo) < 1:
+        print "no devType or on such roomNo"
+        resJson['errInfo'] = 'parameter error ,no devType or no such roomNo'
+        return resJson
+    room = roomInfo[0]
+    # 顺舟设备控制，devType以'sz_'开头
+    if re.match('sz', devType) is not None:
+        whereDict = {'id' : messageJson['devId'][0:-1],
+                     'ep' : messageJson['devId'][-1:],
+                     'gw' : room['gw']}
+        dev = db.select('DEVICE', where = whereDict).first()
+        if dev is None:
+            resJson['errInfo'] = 'no such device'
+            return resJson
+        paraDict = {'on' : messageJson['actionCode']}
+        if devType == 'sz_curtain':
+            paraDict = {"cts" : messageJson['actionCode']}
+        print "sz cmd:"
+        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=dev['gw'])
+    elif re.match('hr', devType) is not None:
+        whereDict = {'id': messageJson['devId'],
+                     'authToken' : room['authToken']}
+        dev = db.select('DEVICE', where=whereDict).first()
+        if dev is None:
+            resJson['errInfo'] = 'no such device'
+            return resJson
+        devStatus = messageJson.get('devStatus', None)
+        cmdJson = {
+            "devId": dev['devId'],
+            "devType": dev['devType'],
+            "authToken": dev['authToken'],
+            "ignoreCardStatus": 0,
+            "actionCode": 1,
+            "cmd": "requestDeviceControl",
+            "devSecretKey": dev['devSecretKey']
+        }
+        if dev['devType'] == 64 and devStatus:
+            print "devstatus:", devStatus
+            cmdJson['mode'] = devStatus['mode']
+            cmdJson['setTemp'] = devStatus['setTemp']
+            cmdJson['speed'] = devStatus['speed']
+            cmdJson['actionCode'] = devStatus['switch']
+        print "cmdJson:", cmdJson
+        haier_proxy.send_rcu_cmd(json.dumps(cmdJson))
+    print "control complette"
+    return copy.deepcopy(constant.OK_RES_JSON)
+    # return mqtt_client.send_cmd(messageJson)
 
 def controlScene(messageJson):
     sceneName = messageJson.get("sceneName", None)
@@ -156,28 +209,36 @@ def getDevList(roomNo):
     room = roomInfo[0]
     rcuInfo = db.query("select * from HAIER_DEVICE where authToken='%s'" % (room['authToken']))
     gwInfo = db.query("select * from DEVICE where gw='%s' and controlType=1" % (room['gw']))
-    serviceInfo = db.query("select * from SERVICE where authToken='%s'" % (room['authToken']))
+    # serviceInfo = db.query("select * from SERVICE where authToken='%s'" % (room['authToken']))
     devListJson = {"rescode":"200",
                    "devList": []}
     for item in rcuInfo:
+        if item.get('clearDevType', 'null') not in {'hr_lock', 'hr_airCondition', 'hr_card'}:
+            continue
         devJson = {'devName': item['devName'],
                    'onLine': item['onLine'],
+                   'devType': item['clearDevType'],
+                   'devId': item['devId'],
                    'actionCode': item['devActionCode']}
         if item['devStatus']:
             devJson['devStatus'] = json.loads(item['devStatus'])
         devListJson['devList'].append(devJson)
 
     for item in gwInfo:
+        if item.get('clearDevType', 'null') not in {'sz_switch', 'sz_curtain', 'sz_adapter'}:
+            continue
         devJson = {'devName': item['devName'],
                    'onLine': item['ol'],
+                   'devType': item['clearDevType'],
+                   'devId': item['id'] + str(item['ep']),
                    'actionCode': item['onoff']}
         devListJson['devList'].append(devJson)
 
-    for item in serviceInfo:
-        devJson = {'devName': item['devName'],
-                   'onLine': 1,
-                   'actionCode': item['serviceStatus']}
-        devListJson['devList'].append(devJson)
+    # for item in serviceInfo:
+    #     devJson = {'devName': item['devName'],
+    #                'onLine': 1,
+    #                'actionCode': item['serviceStatus']}
+    #     devListJson['devList'].append(devJson)
 
     return devListJson
 

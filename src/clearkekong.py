@@ -8,8 +8,8 @@ import haier_proxy
 import mqtt_client
 from protocol import testFunc
 from shunzhou_proxy import ShunzhouProxyFactory, reactor, TCP4ServerEndpoint
+from alive_proxy import AliveProxyFactory
 import websocketServer
-
 
 #测试用定时器线程，
 def timerTest(no, interval):
@@ -37,6 +37,8 @@ websocketServer.websocket_server.start()
 
 endpoint = TCP4ServerEndpoint(reactor, 6666)
 endpoint.listen(ShunzhouProxyFactory())
+endpoint_olv = TCP4ServerEndpoint(reactor, 6667)
+endpoint_olv.listen(AliveProxyFactory())
 reactor.run()
 
 

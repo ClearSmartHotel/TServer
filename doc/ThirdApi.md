@@ -2,7 +2,7 @@
 
 [TOC]
 - - -
-#####  一、服务连接
+###  一、服务连接
 
 ```
 测试服务地址：ws://iotd.cleartv.cn:9999
@@ -11,7 +11,7 @@
 ```
 
 - - -
-#####  二、保持一分钟一次心跳消息
+###  二、保持一分钟一次心跳消息
 
 - 方法
 heartbeat
@@ -36,7 +36,7 @@ heartbeat
 ```
 
 - - -
-#####  三、绑定接口
+###  三、绑定接口
 
 - 方法
 getGowildList,根据gowildId获取房间号
@@ -64,7 +64,7 @@ getGowildList,根据gowildId获取房间号
 ```
 
 - - -
-##### 四、获取场景列表
+### 四、获取场景列表
 
 - 方法
 ```JSON
@@ -99,7 +99,7 @@ getGowildList,根据gowildId获取房间号
 ```
 
 - - -
-##### 五、控制场景
+### 五、控制场景
 
 - 方法
 ```JSON
@@ -127,7 +127,7 @@ getGowildList,根据gowildId获取房间号
 ```
 
 - - -
-##### 六、获取设备列表
+### 六、获取设备列表
 
 - 方法
 ```JSON
@@ -141,38 +141,74 @@ getGowildList,根据gowildId获取房间号
 ```JSON
 {
 	"devList": [{
+		"devType": "hr_lock",
+		"devName": "门锁",
+		"devId": "011000000000630f110fffffffffffff",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devStatus": {
+			"cardStatus": 0,
+			"statusInfo": "拔卡"
+		},
+		"devId": "011000000000630f120fffffffffffff",
+		"onLine": 1,
+		"devName": "插卡取电",
+		"devType": "hr_card",
+		"actionCode": 2
+	}, {
 		"devStatus": {
 			"switch": 1,
-			"speed": 2,
-			"mode": 1,
-			"currentTemp": 16,
-			"setTemp": 26
+			"speed": 4,
+			"mode": 4,
+			"currentTemp": 21,
+			"setTemp": 32
 		},
+		"devId": "011000000000630f80ffffffffffffff",
+		"onLine": 1,
 		"devName": "空调",
-		"actionCode": 1,
-		"onLine": 1
+		"devType": "hr_airCondition",
+		"actionCode": 1
 	}, {
-		"devName": "左夜灯",
-		"actionCode": 0,
-		"onLine": 1
-	}, {
-		"devName": "左阅读灯",
-		"actionCode": 0,
-		"onLine": 1
-	}, {
+		"devType": "sz_curtain",
 		"devName": "纱帘",
+		"devId": "010000124b000e31d29f8",
 		"actionCode": 0,
 		"onLine": 1
 	}, {
-		"devName": "布帘",
+		"devType": "sz_switch",
+		"devName": "夜灯",
+		"devId": "010000124b0014bfe5b71",
 		"actionCode": 0,
 		"onLine": 1
 	}, {
-		"devName": "请稍候",
-		"actionCode": 1,
+		"devType": "sz_switch",
+		"devName": "廊灯",
+		"devId": "010000124b0014bfe5b72",
+		"actionCode": 0,
 		"onLine": 1
 	}, {
-		"devName": "请打扫",
+		"devType": "sz_switch",
+		"devName": "卫灯",
+		"devId": "010000124b0014bfe5b73",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devType": "sz_switch",
+		"devName": "天花灯",
+		"devId": "010000124b0014c592fd1",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devType": "sz_switch",
+		"devName": "书桌灯",
+		"devId": "010000124b0014c592fd2",
+		"actionCode": 0,
+		"onLine": 1
+	}, {
+		"devType": "sz_switch",
+		"devName": "吧台灯",
+		"devId": "010000124b0014c592fd3",
 		"actionCode": 0,
 		"onLine": 1
 	}],
@@ -193,15 +229,16 @@ getGowildList,根据gowildId获取房间号
 ```
 
 - - -
-##### 七、控制设备
+### 七、控制设备
 
 - 方法
 ```JSON
 {
     "wsCmd": "controlDevice",
-    "devName": "空调",//设备名
+    "devId": "010000124b000e0bd0113",
     "roomNo": "clear3f",
-    "actionCode":0,//开:1，关:0
+    "devType": "sz_switch",
+    "actionCode":0,//开:1，关:0，空调控制这个参数不生效
     "devStatus":{//除了空调，其它设备不用传
         "mode": 2,//1制冷，2制热，3保持，4通风
         "setTemp": 25,//15-32
@@ -219,8 +256,9 @@ getGowildList,根据gowildId获取房间号
 	"rescode": "200",
 	"errInfo": "None",
 	"cmdMessage": {
+		"devType": "sz_switch",
 		"wsCmd": "controlDevice",
-		"devName": "空调",
+		"devId": "010000124b0014bfe5b71",
 		"roomNo": "clear3f",
 		"actionCode": 0
 	}
@@ -231,10 +269,11 @@ getGowildList,根据gowildId获取房间号
 {
 	"wsCmd": "controlDevice",
 	"rescode": "400",
-	"errInfo": "cant find device:'空调'",
+	"errInfo": "no such device",
 	"cmdMessage": {
+		"devType": "sz_switch",
 		"wsCmd": "controlDevice",
-		"devName": "空调",
+		"devId": "010000124b0014bfe5b712",
 		"roomNo": "clear3f",
 		"actionCode": 0
 	}
@@ -242,7 +281,7 @@ getGowildList,根据gowildId获取房间号
 ```
 
 - - -
-##### 八、设备状态变化通知消息
+### 八、设备状态变化通知消息
 ```JSON
 {
 	"devStatus": {
@@ -259,3 +298,24 @@ getGowildList,根据gowildId获取房间号
 	"actionCode": 1
 }
 ```
+
+---
+### 九、设备类型列表，（x）代表硬件类型不唯一,需匹配'_'后面字段
+|设备分类|devType|actionCode|onLine|devId|devStatus|备注|
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+|灯光开关面板|(x)_switch|0-关/1-开|0-在线/1-离线|string|无|
+|空调面板|(x)_airCondition|0-关/1-开|0-在线/1-离线|string|详见空调属性|
+|门锁|(x)_lock|0-关/1-开|0-在线/1-离线|string|无|只能控制开|
+|窗帘电机|(x)_curtain|0-100,打开百分比|0-在线/1-离线|string|无|
+|插卡取电|(x)_card|2|0-在线/1-离线|string|cardStatus:0-拔卡,1-插卡|只读|
+|智能插座|(x)_adapter|0-关/1-开|0-在线/1-离线|string|无||
+
+---
+#### 1、空调属性
+参数|类型|范围|说明|读写
+|:-:|:-:|:-:|:-:|:-:|
+|mode|unit8|1-制冷，2-制热，3-保持，4-通风|模式|读写|
+|setTemp|unit8|15-32|设置温度|读写|
+|currentTemp|unit8|15-32|当前温度|只读|
+|speed|unit8|1-低速，2-中速，3-高速，4-自动，5-保持|风速|读写|
+|switch|unit8|1-开，2-关|电源开关|读写|
