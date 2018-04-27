@@ -34,9 +34,9 @@ def send_message_to_all(msg):
 
 def new_client(client, server):
     print("New client connected and was given id %d" %(client['id']))
-    server.send_message_to_all("new client has joined us")
-    id = os.getpid()
-    server.send_message(client,"your id :"+str(id))
+    # server.send_message_to_all("new client has joined us")
+    # id = os.getpid()
+    # server.send_message(client,"your id :"+str(id))
 
 def client_left(client, server):
     print("client %d disconnected" %(client['id']))

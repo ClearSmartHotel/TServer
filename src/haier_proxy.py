@@ -227,8 +227,7 @@ def welcomeStrategy(room, interval):
     time.sleep(1)
     print "open window"
     scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on": 1})
-    # lightInfo = db.select('DEVICE', where={'devName': '背景灯', 'gw': room['gw']})
-    lightInfo = db.query("SELECT * FROM DEVICE WHERE devName LIKE '%灯%';")
+    lightInfo = db.query("SELECT * FROM DEVICE WHERE devName LIKE '%灯%' and gw='%s'"%(room['gw']))
     for dev in lightInfo:
         protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
     time.sleep(3)

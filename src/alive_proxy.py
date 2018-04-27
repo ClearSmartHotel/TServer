@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import json,thread,time
+import re
 
 from twisted.internet.protocol import Factory, Protocol
 from alive_protocol import dataPrase
-import binascii
 
 #保存连接相关数据
 class AliveProxy():
@@ -19,29 +18,21 @@ class AliveProxy():
         self.recv_buf = ''
         self.recv_buf_len = 0
         self.recv_buf_analyse_pos = 0
-        self.brace_stack = []
-        self.data_recv_count_within_a_json = 0
+        self.data_recv_count_within_a_data = 0
 
-        #连接的网关标识
-        self.gw_id = ''
-        self.gw_mac = ''
-
-    #收到一个json包后，会调用此函数
-    def handleJson(self, json_obj):
-        print "handle json:"
+    #收到一个有效包后，会调用此函数
+    def handleData(self, hexString):
+        print "handle hexString:",hexString
         #更新客户端信息
+        print "rcuId:",hexString[4:10]
+        self.factory.clients[self.client].update({"rcuId": hexString[4:10]})
         self.factory.clients[self.client].update({"transport": self.transport})
-        #处理接收数据
 
-        # gw_mac = dataPrase(self.factory.clients[self.client],json_obj)
-        # #更新客户端信息
-        # if gw_mac is not None:
-        #     self.factory.clients[self.client].update({"gw" : gw_mac})
-        #     print "get gw_mac message :" , self.factory.clients[self.client]
+        dataPrase(self.factory.clients[self.client], hexString)
 
 class AliveProxyProtocol(Protocol):
 
-    MAX_DATA_RECV_COUNT_WITH_A_JSON = 10
+    MAX_DATA_RECV_COUNT_WITH_A_DATA = 2
 
     def __init__(self, factory):
         self.factory = factory
@@ -49,9 +40,11 @@ class AliveProxyProtocol(Protocol):
     def connectionMade(self):
         print "alive new connection come"
         self.transport.alive_proxy = AliveProxy(self ,self.factory, self.transport)
-        a = '9f01001d4c0101010100000d'
+        print "info:",self.transport.getPeer()
+        # a = '9f01001d4c0101010100000d'
+        # 查询RCUID
+        a = '9f01ffffff010101040000a4'
         b = bytearray.fromhex(a)
-        print "hex:", str(b)
         self.transport.write(str(b))
         self.factory.addClient(self)
         print "alive clients num:" + str(len(self.factory.clients))
@@ -61,76 +54,73 @@ class AliveProxyProtocol(Protocol):
         self.factory.deleteClient(self)
 
     def dataReceived(self, data):
-        print "data recv: " + data.encode('hex') + "\n"
-        self.transport.alive_proxy.handleJson(data)
+        try:
+            hexString = data.encode('hex')
+            print "recive data:",hexString
+            self.transport.alive_proxy.recv_buf += hexString
+            self.transport.alive_proxy.recv_buf_len += len(hexString)
+            self.transport.alive_proxy.data_recv_count_within_a_data += 1
+        except Exception as e:
+            print "get wrong data,error msg:",e.message
 
-        # self.transport.alive_proxy.recv_buf += data
-        # self.transport.alive_proxy.recv_buf_len += len(data)
-        # self.transport.alive_proxy.data_recv_count_within_a_json += 1
-        #
-        # while True:
-        #     json_obj = self.checkJsonComplete()
-        #     if json_obj == None:
-        #         break
-        #     else:
-        #         self.transport.alive_proxy.handleJson(json_obj)
+        while True:
+            valuedStr = self.checkValuedStr()
+            if valuedStr == None:
+                break
+            else:
+                self.transport.alive_proxy.handleData(valuedStr)
 
-    def checkJsonComplete(self):
-        '''
-        需要大括号 { } 不出现在数据内容里
-
-        TODO:
-        1. 每次 } 都尝试一下获取json？
-        2. 判断 { 后跟"（可有空格） 而不是只判断 { 作为开头 ？
-        3. 错误消息过多，关闭连接，等待重连
-        :return:
-        '''
-        json_obj = None
+    def checkValuedStr(self):
+        valuedStr = None
+        if self.transport.alive_proxy.recv_buf_len < 24:
+            return valuedStr
         i = self.transport.alive_proxy.recv_buf_analyse_pos
         while i < self.transport.alive_proxy.recv_buf_len:
             self.transport.alive_proxy.recv_buf_analyse_pos += 1
+            # 包头为0x9f,协议为01，且长度不小于12个字节为有效数据包
+            if re.match('9f01', self.transport.alive_proxy.recv_buf[i:]):
+                try:
+                    packetDataByte = self.transport.alive_proxy.recv_buf[i + 20:i + 22]
+                    packetLen = 24 + 2 * int(packetDataByte, 16)
+                    valuedStr = self.transport.alive_proxy.recv_buf[i:i + packetLen]
 
-            if self.transport.alive_proxy.recv_buf[i] == '{':
-                self.transport.alive_proxy.brace_stack.append('{');
-            elif self.transport.alive_proxy.recv_buf[i] == '}':
-                self.transport.alive_proxy.brace_stack.pop();
-                if len(self.transport.alive_proxy.brace_stack) == 0:
-                    #try to load json
-                    try:
-                        #print self.transport.alive_proxy.recv_buf[0:i+1]
-                        json_obj = json.loads(self.transport.alive_proxy.recv_buf[0:i+1])
-
-                        self.transport.alive_proxy.recv_buf = self.transport.alive_proxy.recv_buf[i + 1:]
+                    bytesData = bytearray.fromhex(valuedStr)
+                    chekcNum = bytesData[-1]
+                    totalNum = 0
+                    for b in bytesData[0:-1]:
+                        totalNum += b
+                    # 最后一个字节为校验字段，值为所有字段求和%256
+                    if totalNum % 256 == chekcNum:
+                        self.transport.alive_proxy.recv_buf = self.transport.alive_proxy.recv_buf[i + packetLen:]
                         self.transport.alive_proxy.recv_buf_len = len(self.transport.alive_proxy.recv_buf)
                         self.transport.alive_proxy.recv_buf_analyse_pos = 0
-                        self.transport.alive_proxy.data_recv_count_within_a_json = 0
-                        #print "left: " + self.transport.alive_proxy.recv_buf
+                        self.transport.alive_proxy.data_recv_count_within_a_data = 0
                         break
-                    except:
-                        print "try to load a complete json fail, wait for more data"
-
-                        if self.transport.alive_proxy.data_recv_count_within_a_json > self.MAX_DATA_RECV_COUNT_WITH_A_JSON:
-                            print "can not build a json msg within too many data recved:"
-                            print self.transport.alive_proxy.recv_buf
-                            print "close connection..."
-                            self.transport.loseConnection()
-
+                    else:
                         pass
+                except:
+                    print "try to load a valued data fail, wait for more data"
+                    if self.transport.alive_proxy.data_recv_count_within_a_data > self.MAX_DATA_RECV_COUNT_WITH_A_DATA:
+                        print "can not build a json msg within too many data recved:"
+                        print self.transport.alive_proxy.recv_buf
+                        print "close connection..."
+                        self.transport.loseConnection()
+                    pass
             else:
                 pass
             i += 1
 
-        return json_obj
-
+        return valuedStr
 
 class AliveProxyFactory(Factory):
     clients = {}
 
     def buildProtocol(self, addr):
+        print "addr:",addr
         return AliveProxyProtocol(self)
     def addClient(self, newclient):
         print(newclient)
-        self.clients[newclient] = { "gw" : None, "transport" : None}
+        self.clients[newclient] = { "rcuId" : None, "transport" : None}
     def deleteClient(self, client):
         print(client)
         del self.clients[client]
