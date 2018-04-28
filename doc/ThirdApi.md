@@ -133,7 +133,7 @@ getGowildList,根据gowildId获取房间号
 ```JSON
 {
     "wsCmd": "getDevList",
-    "roomNo": "clear3f"
+    "roomNo": "clear3f1"
 }
 ```
 
