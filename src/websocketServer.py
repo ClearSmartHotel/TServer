@@ -45,6 +45,13 @@ def message_received(client, server, message):
     print("Client %d said: %s"%(client['id'], message))
     try:
         messageJson = json.loads(message)
+    except:
+        resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
+        resJson['errInfo'] = 'not json data:' + str(message)
+        server.send_message(client, json.dumps(resJson))
+        return 0
+
+    try:
         roomNo = messageJson.get('roomNo', None)
         wsCmd = messageJson.get('wsCmd', None)
         print "roomNo:", roomNo
@@ -75,7 +82,8 @@ def message_received(client, server, message):
         print "invalid message",str(e)
         resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
         resJson['errInfo'] = 'invalid message' + str(e)
-        resJson['cmdMessage'] = message
+        resJson['wsCmd'] = wsCmd
+        resJson['cmdMessage'] = messageJson
         server.send_message(client, json.dumps(resJson))
 
 def getGowildList(messageJson):
@@ -121,9 +129,9 @@ def controlDevice(messageJson):
         print "sz cmd:"
         protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=dev['gw'])
     elif re.match('hr', devType) is not None:
-        whereDict = {'id': messageJson['devId'],
+        whereDict = {'devId': messageJson['devId'],
                      'authToken' : room['authToken']}
-        dev = db.select('DEVICE', where=whereDict).first()
+        dev = db.select('HAIER_DEVICE', where=whereDict).first()
         if dev is None:
             resJson['errInfo'] = 'no such device'
             return resJson
