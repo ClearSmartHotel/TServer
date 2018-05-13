@@ -7,6 +7,7 @@ import paho.mqtt.client as mqtt
 
 import haier_proxy
 import protocol
+import alive_protocol
 from common import config
 from common.DBBase import db
 from scene import maker as scene
@@ -116,6 +117,7 @@ def get_dev_list(dictData):
     rcuInfo = db.query("select * from HAIER_DEVICE where authToken='%s'" % (room['authToken']))
     gwInfo = db.query("select * from DEVICE where gw='%s' and controlType=1" % (room['gw']))
     serviceInfo = db.query("select * from SERVICE where authToken='%s'" % (room['authToken']))
+    aliveInfo = db.query("select * from ALIVE_DEVICE where aliveRcuId='%s'" % (room['aliveRcuId']))
     devListJson = {"wxCmd":"devList","devList":[]}
     for item in rcuInfo:
         devJson = {'devName': item['devName'],
@@ -137,6 +139,14 @@ def get_dev_list(dictData):
                    'actionCode': item['serviceStatus']}
         devListJson['devList'].append(devJson)
 
+    for item in aliveInfo:
+        devJson = {'devName': item['devName'],
+                   'onLine': 1,
+                   'actionCode': item['devActionCode']}
+        if item['devStatus']:
+            devJson['devStatus'] = json.loads(item['devStatus'])
+        devListJson['devList'].append(devJson)
+
     publish_message(config.project_name + dictData['roomNo'], json.dumps(devListJson))
 
 def send_cmd(dictData):
@@ -151,8 +161,9 @@ def send_cmd(dictData):
     rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s' and authToken='%s'"%(devName, room['authToken']))
     gwInfo = db.query("select * from DEVICE where devName='%s'and gw='%s'" % (devName, room['gw']))
     serviceInfo = db.query("select * from SERVICE where devName='%s' and authToken='%s'" % (devName, room['authToken']))
+    aliveInfo = db.query("select * from ALIVE_DEVICE where devName='%s' and aliveRcuId='%s'" % (devName, room['aliveRcuId']))
     devStatus = dictData.get('devStatus', None)
-    if len(rcuInfo) < 1 and len(gwInfo) < 1 and len(serviceInfo) < 1:
+    if len(rcuInfo) < 1 and len(gwInfo) < 1 and len(serviceInfo) < 1 and len(aliveInfo) < 1:
         print "cant find device:", devName
         resJson['errInfo'] = "cant find device:'%s'"%(devName)
         return resJson
@@ -194,6 +205,12 @@ def send_cmd(dictData):
     elif len(serviceInfo) > 0:#海尔service控制
         service = serviceInfo[0]
         haier_proxy.control_service(service, dictData.get('actionCode'))
+    elif len(aliveInfo) > 0:
+        dev = aliveInfo[0]
+        if dev['clearDevType'] == 'alive_service':
+            alive_protocol.controlService(dev, dictData)
+        elif dev['clearDevType'] == 'alive_airCondition':
+            alive_protocol.controlAirCondition(room, dev, devStatus)
     return copy.deepcopy(constant.OK_RES_JSON)
 
 

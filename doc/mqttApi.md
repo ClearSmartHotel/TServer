@@ -7,7 +7,7 @@
 
 - 服务器
 ```
-服务器：183.134.4.158
+服务器：iotd.cleartv.cn
 端口：1883
 ```
 
@@ -98,6 +98,8 @@ POST 所有指令通过mqtt订阅项目名+房间号返回
 {
 "wxAuthToken": "kuidara56bm963fapw2t20180130093902",
 "wxCmd":"devControl",
+"devId":"",
+"devType:"hr_airConfition",
 "devName":"空调",//设备id
 "actionCode":0,//开:1，关:0
 "devStatus":{//除了空调，其它设备不用传
@@ -115,7 +117,9 @@ POST 所有指令通过mqtt订阅项目名+房间号返回
     "wxCmd":"devStatus",
     "devName": "射灯",
     "onLine": 1,
-    "actionCode": 0，
+    "devId":"xxx",
+    "devType":"hr_airConfition",
+    "actionCode": 0,
     "devStatus": {//空调才有
 			"switch": 1,
 			"speed": 2,

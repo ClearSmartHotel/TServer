@@ -13,6 +13,7 @@ import copy
 import os
 import re
 import haier_proxy
+import alive_protocol
 
 class wsServer(threading.Thread):
     def __init__(self):
@@ -39,7 +40,7 @@ def new_client(client, server):
     # server.send_message(client,"your id :"+str(id))
 
 def client_left(client, server):
-    print("client %d disconnected" %(client['id']))
+    print "client disconnected"
 
 def message_received(client, server, message):
     print("Client %d said: %s"%(client['id'], message))
@@ -153,9 +154,14 @@ def controlDevice(messageJson):
             cmdJson['actionCode'] = devStatus['switch']
         print "cmdJson:", cmdJson
         haier_proxy.send_rcu_cmd(json.dumps(cmdJson))
+    elif re.match('alive', devType) is not None:
+        if devType == 'alive_airCondition':
+            whereDict = {'devId': messageJson['devId'],
+                         'aliveRcuId': room['aliveRcuId']}
+            dev = db.select('ALIVE_DEVICE', where=whereDict).first()
+            alive_protocol.controlAirCondition(room, dev, messageJson.get('devStatus', None))
     print "control complette"
     return copy.deepcopy(constant.OK_RES_JSON)
-    # return mqtt_client.send_cmd(messageJson)
 
 def controlScene(messageJson):
     sceneName = messageJson.get("sceneName", None)
@@ -163,32 +169,24 @@ def controlScene(messageJson):
     if sceneName is None:
         resJson['errInfo'] = 'parameter error ,no sceneName'
         return resJson
+    roomInfo = db.query("select * from ROOM where roomNo='%s'" % (messageJson['roomNo']))
+    if len(roomInfo) < 1:
+        resJson['errInfo'] = 'no such roomNo'
+        return resJson
+    room = roomInfo[0]
     print "scnenName:",sceneName
-    if "模式" in sceneName:
+    if "模式" in sceneName:#普通模式，控制顺舟开关面板
         print "4 scene"
         dictJson = copy.deepcopy(messageJson)
         dictJson['devName'] = sceneName
+        dictJson['devType'] = 'sz_switch'
         return controlDevice(dictJson)
     elif sceneName in {"灯光全开", "灯光全关"}:
         return mqtt_client.crontrolScene(messageJson)
     elif sceneName == '打开窗帘':
-        roomInfo = db.query("select * from ROOM where roomNo='%s'" % (messageJson['roomNo']))
-        if len(roomInfo) < 1:
-            resJson['errInfo'] = 'no such roomNo'
-            return resJson
-        room = roomInfo[0]
-        curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
-        for dev in curtainInfo:
-            protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
+        protocol.openWindow(room)
     elif sceneName == '关闭窗帘':
-        roomInfo = db.query("select * from ROOM where roomNo='%s'" % (messageJson['roomNo']))
-        if len(roomInfo) < 1:
-            resJson['errInfo'] = 'no such roomNo'
-            return resJson
-        room = roomInfo[0]
-        curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
-        for dev in curtainInfo:
-            protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 0}, gw_mac=room['gw'])
+        protocol.closeWindow(room)
     return copy.deepcopy(constant.OK_RES_JSON)
 
 def getSceneList(roomNo):
@@ -217,6 +215,7 @@ def getDevList(roomNo):
     room = roomInfo[0]
     rcuInfo = db.query("select * from HAIER_DEVICE where authToken='%s'" % (room['authToken']))
     gwInfo = db.query("select * from DEVICE where gw='%s' and controlType=1" % (room['gw']))
+    aliveInfo = db.query("select * from ALIVE_DEVICE where aliveRcuId='%s'" % (room['aliveRcuId']))
     # serviceInfo = db.query("select * from SERVICE where authToken='%s'" % (room['authToken']))
     devListJson = {"rescode":"200",
                    "devList": []}
@@ -240,6 +239,16 @@ def getDevList(roomNo):
                    'devType': item['clearDevType'],
                    'devId': item['id'] + str(item['ep']),
                    'actionCode': item['onoff']}
+        devListJson['devList'].append(devJson)
+
+    for item in aliveInfo:
+        if item.get('clearDevType', 'null') not in {'alive_airCondition'}:
+            continue
+        devJson = {'devName': item['devName'],
+                   'onLine': item['onLine'],
+                   'devType': item['clearDevType'],
+                   'devId': item['devId'],
+                   'actionCode': item['devActionCode']}
         devListJson['devList'].append(devJson)
 
     # for item in serviceInfo:

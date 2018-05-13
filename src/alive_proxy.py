@@ -24,15 +24,15 @@ class AliveProxy():
     def handleData(self, hexString):
         print "handle hexString:",hexString
         #更新客户端信息
-        print "rcuId:",hexString[4:10]
-        self.factory.clients[self.client].update({"rcuId": hexString[4:10]})
+        print "aliveRcuId:",hexString[4:10]
+        self.factory.clients[self.client].update({"aliveRcuId": hexString[4:10]})
         self.factory.clients[self.client].update({"transport": self.transport})
 
         dataPrase(self.factory.clients[self.client], hexString)
 
 class AliveProxyProtocol(Protocol):
 
-    MAX_DATA_RECV_COUNT_WITH_A_DATA = 2
+    MAX_DATA_RECV_COUNT_WITH_A_DATA = 4
 
     def __init__(self, factory):
         self.factory = factory
@@ -120,7 +120,7 @@ class AliveProxyFactory(Factory):
         return AliveProxyProtocol(self)
     def addClient(self, newclient):
         print(newclient)
-        self.clients[newclient] = { "rcuId" : None, "transport" : None}
+        self.clients[newclient] = { "aliveRcuId" : None, "transport" : None}
     def deleteClient(self, client):
         print(client)
         del self.clients[client]

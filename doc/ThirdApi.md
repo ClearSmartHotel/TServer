@@ -36,31 +36,29 @@ heartbeat
 ```
 
 - - -
-###  三、绑定接口
-
+###  三、绑定接口,获取机器人的websocket服务器信息
 - 方法
-getGowildList,根据gowildId获取房间号
+HTTP.GET
+建议将把获得的主机信息保存在本地，当外网不通时用本地保存的主机信息，外网能通就获取服务端的信息
+
+-接口地址
+http://iotd.cleartv.cn/iotd_backend/gowildInfo?gowildId=3111706000425
 
 - 参数
-```JSON
-{
-    "wsCmd": "getGowildList",
-    "gowildId": "112233"#不传这个参数，会返回所有房间列表
-}
-```
+gowildId：设备ID
 
 - 返回内容
 ```JSON
-{"wsCmd": "getGowildList",
- "gowildList": 
-     [
-         {"gowildId": "abcdefg", "roomNo": "A101"}, 
-         {"gowildId": "112233", "roomNo": "clear3f"}
-     ], 
- "rescode": "200", 
- "errInfo": "None", 
- "cmdMessage": {"wsCmd": "getGowildList"}}
-
+{
+    "wsServerPort": "9999",
+    "roomNo": "clear3f2",
+    "rescode": "200",
+    "gowildId": "3111706000425",
+    "thirdApi": "getGowild",
+    "projectName": "tzgjhotel",
+    "wsServerHost": "192.168.17.187",
+    "errInfo": "None"
+}
 ```
 
 - - -

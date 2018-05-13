@@ -152,7 +152,7 @@ def dev_status_notify(data):
     #插卡取电
     if statusJson['devType'] == 2 and devStatus is not None:
         if devStatus['cardStatus'] == 1:
-            open_window(room)
+            protocol.openWindow(room)
             thread.start_new_thread(welcomeStrategy,(room, 1))
             get_room_devices(token)
             get_room_services(token)
@@ -160,11 +160,7 @@ def dev_status_notify(data):
             thread.start_new_thread(goodbyeStrategy, (room, 9))
             thread.start_new_thread(goodbyeStrategy, (room, 13))
 
-def open_window(room):
-    # 打开所有窗
-    curtainInfo = db.select('DEVICE', where={'did': constant.SZ_CURTAIN_DID, 'gw': room['gw']})
-    for dev in curtainInfo:
-        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 1}, gw_mac=room['gw'])
+
 
 def send_rcu_cmd(cmd):
     if ws_heartbeat_flag == False:
@@ -220,28 +216,7 @@ def welcomeStrategy(room, interval):
         print "cardStatus:", cStatus
         if cStatus['cardStatus'] == 0:
             thread.exit()
-    print "open all light"
-    scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on":1})
-    time.sleep(1)
-    open_window(room)
-    time.sleep(1)
-    print "open window"
-    scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on": 1})
-    lightInfo = db.query("SELECT * FROM DEVICE WHERE devName LIKE '%%灯%%' and gw='%s'"%(room['gw']))
-    for dev in lightInfo:
-        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
-    time.sleep(3)
-    lightInfo = db.select('DEVICE', where={'devName': '廊灯', 'gw': room['gw']})
-    for dev in lightInfo:
-        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
-    print "open all light again"
-    scene.maker.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on": 1})
-
-
-    #打开电视
-    # tvInfo = db.select('DEVICE', where={'devName': '电视', 'gw': room['gw']})
-    # for dev in tvInfo:
-    #     protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
+    protocol.welcomeFunc(room)
     thread.exit_thread()
 
 #送宾模式，关掉所有窗
@@ -254,9 +229,7 @@ def goodbyeStrategy(room, interval):
         cStatus = json.loads(card['devStatus'])
         print "cardStatus:",cStatus
         if cStatus['cardStatus'] == 0:
-            curtainInfo = db.select('DEVICE', where={'did':constant.SZ_CURTAIN_DID,'gw':room['gw']})
-            for dev in curtainInfo:
-                protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"cts": 0}, gw_mac=room['gw'])
+            protocol.closeWindow(room)
     thread.exit_thread()
 
 #将房间设备状态更新到数据库
