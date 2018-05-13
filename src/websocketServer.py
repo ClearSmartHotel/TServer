@@ -177,9 +177,17 @@ def controlScene(messageJson):
     print "scnenName:",sceneName
     if "模式" in sceneName:#普通模式，控制顺舟开关面板
         print "4 scene"
+        whereDict = {'gw': room['gw'],
+                     'devName': sceneName}
         dictJson = copy.deepcopy(messageJson)
+        dev = db.select(constant.TABLE_SHUNZHOU,where=whereDict).first()
+        if dev is None:
+            resJson['errInfo'] = 'can not set this sceneName: %s'%(sceneName)
+            return resJson
         dictJson['devName'] = sceneName
-        dictJson['devType'] = 'sz_switch'
+        dictJson['devType'] = dev['clearDevType']
+        dictJson['actionCode'] = 1
+        dictJson['devId'] = dev['id'] + str(dev['ep'])
         return controlDevice(dictJson)
     elif sceneName in {"灯光全开", "灯光全关"}:
         return mqtt_client.crontrolScene(messageJson)
