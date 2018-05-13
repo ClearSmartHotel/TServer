@@ -13,6 +13,7 @@ from common.DBBase import db
 from scene import maker as scene
 import constant
 import copy
+import re
 
 mqttclient = mqtt.Client()
 
@@ -73,7 +74,7 @@ def handle_message(topic, data):
             crontrolScene(cmdDict)
         elif cmd == "devControl":
             print "devControl"
-            send_cmd(cmdDict)
+            devControl(cmdDict)
         elif cmd == "setScene":
             print "setScene"
             set_scene(cmdDict)
@@ -122,6 +123,8 @@ def get_dev_list(dictData):
     for item in rcuInfo:
         devJson = {'devName': item['devName'],
                    'onLine': item['onLine'],
+                   'devType': item['clearDevType'],
+                   'devId': item['devId'],
                    'actionCode': item['devActionCode']}
         if item['devStatus']:
             devJson['devStatus'] = json.loads(item['devStatus'])
@@ -130,6 +133,8 @@ def get_dev_list(dictData):
     for item in gwInfo:
         devJson = {'devName': item['devName'],
                    'onLine': item['ol'],
+                   'devType': item['clearDevType'],
+                   'devId': item['id'] + str(item['ep']),
                    'actionCode': item['onoff']}
         devListJson['devList'].append(devJson)
 
@@ -142,6 +147,8 @@ def get_dev_list(dictData):
     for item in aliveInfo:
         devJson = {'devName': item['devName'],
                    'onLine': 1,
+                   'devType': item['clearDevType'],
+                   'devId': item['devId'],
                    'actionCode': item['devActionCode']}
         if item['devStatus']:
             devJson['devStatus'] = json.loads(item['devStatus'])
@@ -149,15 +156,27 @@ def get_dev_list(dictData):
 
     publish_message(config.project_name + dictData['roomNo'], json.dumps(devListJson))
 
-def send_cmd(dictData):
+def devControl(dictData):
     devName = dictData.get('devName', None)
+    devType = dictData.get('devType', None)
+    devId = dictData.get('devId', None)
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (dictData['roomNo']))
     resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
-    if devName is None or len(roomInfo) < 1:
+    if devType is None or devId is None or len(roomInfo) < 1:
         print "no devName or on such roomNo"
-        resJson['errInfo'] = 'parameter error ,no devName or on such roomNo'
+        resJson['errInfo'] = 'parameter error :no clearDevType or devId or no such roomNo'
         return resJson
     room = roomInfo[0]
+    if re.match('sz', devType) is not None:
+        paraDict = {'on': dictData['actionCode']}
+        if devType == 'sz_curtain':
+            paraDict = {"cts": dictData['actionCode']}
+        print "sz cmd:"
+        protocol.sendControlDev(id=devId[0:-1], ep=devId[-1:], paraDict=paraDict, gw_mac=room['gw'])
+    elif re.match('hr', devType) is not None:
+        pass
+    elif re.match('alive', devType) is not None:
+        pass
     rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s' and authToken='%s'"%(devName, room['authToken']))
     gwInfo = db.query("select * from DEVICE where devName='%s'and gw='%s'" % (devName, room['gw']))
     serviceInfo = db.query("select * from SERVICE where devName='%s' and authToken='%s'" % (devName, room['authToken']))

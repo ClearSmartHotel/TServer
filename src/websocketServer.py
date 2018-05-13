@@ -120,7 +120,7 @@ def controlDevice(messageJson):
         whereDict = {'id' : messageJson['devId'][0:-1],
                      'ep' : messageJson['devId'][-1:],
                      'gw' : room['gw']}
-        dev = db.select('DEVICE', where = whereDict).first()
+        # dev = db.select('DEVICE', where = whereDict).first()
         if dev is None:
             resJson['errInfo'] = 'no such device'
             return resJson
@@ -128,7 +128,7 @@ def controlDevice(messageJson):
         if devType == 'sz_curtain':
             paraDict = {"cts" : messageJson['actionCode']}
         print "sz cmd:"
-        protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict=paraDict, gw_mac=dev['gw'])
+        protocol.sendControlDev(id=whereDict['id'], ep=whereDict['ep'], paraDict=paraDict, gw_mac=dev['gw'])
     elif re.match('hr', devType) is not None:
         whereDict = {'devId': messageJson['devId'],
                      'authToken' : room['authToken']}
