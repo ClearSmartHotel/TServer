@@ -97,7 +97,7 @@ class AliveProxyProtocol(Protocol):
                         self.transport.alive_proxy.data_recv_count_within_a_data = 0
                         break
                     else:
-                        pass
+                        valuedStr = None
                 except:
                     print "try to load a valued data fail, wait for more data"
                     if self.transport.alive_proxy.data_recv_count_within_a_data > self.MAX_DATA_RECV_COUNT_WITH_A_DATA:
@@ -105,7 +105,7 @@ class AliveProxyProtocol(Protocol):
                         print self.transport.alive_proxy.recv_buf
                         print "close connection..."
                         self.transport.loseConnection()
-                    pass
+                    valuedStr = None
             else:
                 pass
             i += 1

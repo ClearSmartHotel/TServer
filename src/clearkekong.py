@@ -22,7 +22,7 @@ def timerTest(no, interval):
     thread.exit_thread()
 
 
-# thread.start_new_thread(timerTest,(1,2))
+# thread.start_new_thread(timerTest,(1,5))
 
 #海尔websocket client
 rcu_ws = haier_proxy.haier_rcu_websocket()

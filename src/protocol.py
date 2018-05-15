@@ -266,9 +266,9 @@ def welcomeFunc(room):
     time.sleep(1)
     print "open window"
     scene.controlGroup(room['roomNo'], constant.GROUP_ALL_LIGHT, {"on": 1})
-    # lightInfo = db.query("SELECT * FROM DEVICE WHERE devName LIKE '%%灯%%' and gw='%s'"%(room['gw']))
-    # for dev in lightInfo:
-    #     protocol.sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
+    lightInfo = db.query("SELECT * FROM DEVICE WHERE gw='%s' and devName LIKE '%%灯%%'"%(room['gw']))
+    for dev in lightInfo:
+        sendControlDev(id=dev['id'], ep=dev['ep'], paraDict={"on": 1}, gw_mac=room['gw'])
     time.sleep(3)
     lightInfo = db.select('DEVICE', where={'devName': '廊灯', 'gw': room['gw']})
     for dev in lightInfo:
@@ -291,10 +291,22 @@ def testFunc():
     # sendControlDev(id="010000124b000e5369f6", ep=8, paraDict=paraDict)
 
     onOff = 1 - onOff
-    if onOff:
-        sendControlDev(id="010000124b00170cf82a", ep=1, paraDict={"on": 1})
-    else:
-        sendControlDev(id="010000124b00170cf82a", ep=1, paraDict={"on": 0})
+    sendControlDev(id="010000124b000c333228", ep=1, paraDict={"incd": "1122"})
+
+    # sendControlDev(id="010000124b000e0c0498", ep=1, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdff996", ep=1, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdff996", ep=2, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdff9a6", ep=1, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdff9a6", ep=2, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdff9a6", ep=3, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdff9a6", ep=4, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdffaa6", ep=1, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdffaa6", ep=2, paraDict={"on": onOff})
+    # sendControlDev(id="010000124b000fdffaa6", ep=3, paraDict={"on": onOff})
+    # if onOff:
+    #     sendControlDev(id="010000124b000f8c96ee", ep=1, paraDict={"lock": 1})
+    # else:
+
 """
         # scene.controlGroup("2507", constant.GROUP_ALL_LIGHT, {"on": 1})
         # sendControlDev(id="010000124b000e5369f6", ep=8, paraDict={"pt": 100})

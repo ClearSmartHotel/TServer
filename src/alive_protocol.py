@@ -8,6 +8,7 @@ import mqtt_client
 from common import config
 import protocol
 import thread
+import websocketServer
 
 
 '''
@@ -143,9 +144,9 @@ def serviceUploadPacket(clinet_msg, msg):
             db.update("ALIVE_DEVICE", where={"aliveRcuId": msg[4:10], "clearDevType": 'alive_airCondition'},**devInfo)
 
     #将状态更新推送到websocket客户端
-    statusJson['wsCmd'] = statusJson.pop('wxCmd')
-    statusJson['roomNo'] = dev['roomNo']
-    websocketServer.send_message_to_all(json.dumps(statusJson))
+    # statusJson['wsCmd'] = mqttJson.pop('wxCmd')
+    # statusJson['roomNo'] = room['roomNo']
+    # websocketServer.send_message_to_all(json.dumps(statusJson))
 
 
 def checkMsg(hexString):
@@ -191,7 +192,7 @@ def controlAirCondition(room, dev, devStatus):
     airConditionCmd = localStatus['stringValue']
     print "airConditionCmd:", airConditionCmd
     for k, v in devStatus.items():
-        if localStatus[k] != v:
+        if localStatus[k] != v and v != 0 and k != 'currentTemp':
             print "key:", k
             if k == 'setTemp':
                 airConditionCmd = airConditionCmd[0:2] + str(int(str(hex(v))[-2]) - 1) + str(hex(v))[
@@ -226,23 +227,23 @@ def controlAirCondition(room, dev, devStatus):
 
     cmdMsg = '9f01' + room['aliveRcuId'] + '0101' + '020102' + '0f01' + airConditionCmd
 
-    sendOut = sendMessage(room['aliveRcuId'], cmdMsg)
+    sendMessage(room['aliveRcuId'], cmdMsg)
 
-    if sendOut == 1:
-        statusJson = {'stringValue': airConditionCmd,
-                      'mode': constant.ALVIE_2API_MODE_TUP[int(airConditionCmd[0:2], 16)],
-                      'setTemp': int(airConditionCmd[2:4], 16) + 16,
-                      'speed': constant.ALVIE_2API_SPEED_TUP[int(airConditionCmd[4:6], 16)],
-                      'switch': 2 - int(airConditionCmd[20:22], 16) % 2}
-        ret = db.select("ALIVE_DEVICE", where={"aliveRcuId": room['aliveRcuId'], "clearDevType": 'alive_airCondition'}).first()
-        if ret is not None:
-            stJson = json.loads(ret['devStatus'])
-            statusJson['currentTemp'] = stJson['currentTemp']
-        else:
-            statusJson['currentTemp'] = 20
-            send_cmd(room['aliveRcuId'])
-        msgInfo = {'devStatus': json.dumps(statusJson)}
-        db_replace("ALIVE_DEVICE", {"aliveRcuId": room['aliveRcuId'], "clearDevType": 'alive_airCondition'}, msgInfo)
+    # if sendOut == 1:
+    #     statusJson = {'stringValue': airConditionCmd,
+    #                   'mode': constant.ALVIE_2API_MODE_TUP[int(airConditionCmd[0:2], 16)],
+    #                   'setTemp': int(airConditionCmd[2:4], 16) + 16,
+    #                   'speed': constant.ALVIE_2API_SPEED_TUP[int(airConditionCmd[4:6], 16)],
+    #                   'switch': 2 - int(airConditionCmd[20:22], 16) % 2}
+    #     ret = db.select("ALIVE_DEVICE", where={"aliveRcuId": room['aliveRcuId'], "clearDevType": 'alive_airCondition'}).first()
+    #     if ret is not None:
+    #         stJson = json.loads(ret['devStatus'])
+    #         statusJson['currentTemp'] = stJson['currentTemp']
+    #     else:
+    #         statusJson['currentTemp'] = 20
+    #         send_cmd(room['aliveRcuId'])
+    #     msgInfo = {'devStatus': json.dumps(statusJson)}
+    #     db_replace("ALIVE_DEVICE", {"aliveRcuId": room['aliveRcuId'], "clearDevType": 'alive_airCondition'}, msgInfo)
 
 
 def sendMessage(aliveRcuId, cmdMsg):

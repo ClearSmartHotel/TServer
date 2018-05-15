@@ -32,6 +32,7 @@ class mqtt_task(threading.Thread):
 def on_connect(client, userdata, flags, rc):
     print("connected :" + str(rc))
     client.subscribe(config.project_name)
+    client.subscribe('topicTime')
 
 def on_message(client, userdata, msg):
     print client
@@ -162,21 +163,27 @@ def devControl(dictData):
     devId = dictData.get('devId', None)
     roomInfo = db.query("select * from ROOM where roomNo='%s'" % (dictData['roomNo']))
     resJson = copy.deepcopy(constant.BAD_REQUEST_RES_JSON)
-    if devType is None or devId is None or len(roomInfo) < 1:
-        print "no devName or on such roomNo"
-        resJson['errInfo'] = 'parameter error :no clearDevType or devId or no such roomNo'
+    if len(roomInfo) < 1:
+        print "no such roomNo"
+        resJson['errInfo'] = 'parameter error : no such roomNo'
         return resJson
+    # if devType is None or devId is None:
+    if devName is None:
+        print "no devName or on such roomNo"
+        resJson['errInfo'] = 'parameter error :no clearDevType or devId or devName'
+        return resJson
+
     room = roomInfo[0]
-    if re.match('sz', devType) is not None:
-        paraDict = {'on': dictData['actionCode']}
-        if devType == 'sz_curtain':
-            paraDict = {"cts": dictData['actionCode']}
-        print "sz cmd:"
-        protocol.sendControlDev(id=devId[0:-1], ep=devId[-1:], paraDict=paraDict, gw_mac=room['gw'])
-    elif re.match('hr', devType) is not None:
-        pass
-    elif re.match('alive', devType) is not None:
-        pass
+    # if re.match('sz', devType) is not None:
+    #     paraDict = {'on': dictData['actionCode']}
+    #     if devType == 'sz_curtain':
+    #         paraDict = {"cts": dictData['actionCode']}
+    #     print "sz cmd:"
+    #     protocol.sendControlDev(id=devId[0:-1], ep=devId[-1:], paraDict=paraDict, gw_mac=room['gw'])
+    # elif re.match('hr', devType) is not None:
+    #     pass
+    # elif re.match('alive', devType) is not None:
+    #     pass
     rcuInfo = db.query("select * from HAIER_DEVICE where devName='%s' and authToken='%s'"%(devName, room['authToken']))
     gwInfo = db.query("select * from DEVICE where devName='%s'and gw='%s'" % (devName, room['gw']))
     serviceInfo = db.query("select * from SERVICE where devName='%s' and authToken='%s'" % (devName, room['authToken']))

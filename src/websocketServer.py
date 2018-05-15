@@ -121,14 +121,14 @@ def controlDevice(messageJson):
                      'ep' : messageJson['devId'][-1:],
                      'gw' : room['gw']}
         # dev = db.select('DEVICE', where = whereDict).first()
-        if dev is None:
-            resJson['errInfo'] = 'no such device'
-            return resJson
+        # if dev is None:
+        #     resJson['errInfo'] = 'no such device'
+        #     return resJson
         paraDict = {'on' : messageJson['actionCode']}
         if devType == 'sz_curtain':
             paraDict = {"cts" : messageJson['actionCode']}
         print "sz cmd:"
-        protocol.sendControlDev(id=whereDict['id'], ep=whereDict['ep'], paraDict=paraDict, gw_mac=dev['gw'])
+        protocol.sendControlDev(id=whereDict['id'], ep=whereDict['ep'], paraDict=paraDict, gw_mac=room['gw'])
     elif re.match('hr', devType) is not None:
         whereDict = {'devId': messageJson['devId'],
                      'authToken' : room['authToken']}
@@ -189,7 +189,8 @@ def controlScene(messageJson):
         dictJson['actionCode'] = 1
         dictJson['devId'] = dev['id'] + str(dev['ep'])
         return controlDevice(dictJson)
-    elif sceneName in {"灯光全开", "灯光全关"}:
+    elif sceneName == "灯光全开" or sceneName == "灯光全关":
+        print "control all_light:",sc
         return mqtt_client.crontrolScene(messageJson)
     elif sceneName == '打开窗帘':
         protocol.openWindow(room)
@@ -257,6 +258,8 @@ def getDevList(roomNo):
                    'devType': item['clearDevType'],
                    'devId': item['devId'],
                    'actionCode': item['devActionCode']}
+        if item['devStatus']:
+            devJson['devStatus'] = json.loads(item['devStatus'])
         devListJson['devList'].append(devJson)
 
     # for item in serviceInfo:
